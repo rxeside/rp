@@ -10,12 +10,12 @@ services:
     ports:
       - "8081:8081" # GRPC API port
     environment:
-      INVENTORY_DB_HOST: product-db
-      INVENTORY_DB_PORT: 3306
-      INVENTORY_DB_NAME: product
-      INVENTORY_DB_USER: product
-      INVENTORY_DB_PASSWORD: ${DB_PASSWORD}
-      INVENTORY_DB_MAX_CONN: 5
+      PRODUCT_DB_HOST: product-db
+      PRODUCT_DB_PORT: 3306
+      PRODUCT_DB_NAME: product
+      PRODUCT_DB_USER: product
+      PRODUCT_DB_PASSWORD: ${DB_PASSWORD}
+      PRODUCT_DB_MAX_CONN: 5
     depends_on:
       - product-db
     restart: unless-stopped
