@@ -6,7 +6,7 @@ local PROTOC_VERSION = "27.3";
 
 {
     generateGRPC(protoFiles):: {
-        from: "golang:1.23-bookworm",
+        from: "golang:1.25-bookworm",
         workdir: "/app",
         env: {
             PATH: "/go/bin:/usr/local/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",

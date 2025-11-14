@@ -3,10 +3,10 @@ package transport
 import (
 	"context"
 
-	api "inventory/api/server/inventoryinternal"
+	api "product/api/server/productinternal"
 )
 
-func NewInternalAPI() api.InventoryInternalServiceServer {
+func NewInternalAPI() api.ProductInternalServiceServer {
 	return &internalAPI{}
 }
 

@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"net"
+	transport2 "product/pkg/product/infrastructure/transport"
 	"time"
 
 	"github.com/pkg/errors"
@@ -10,8 +11,7 @@ import (
 	"github.com/urfave/cli/v2"
 	"google.golang.org/grpc"
 
-	api "inventory/api/server/inventoryinternal"
-	"inventory/pkg/infrastructure/transport"
+	api "product/api/server/productinternal"
 )
 
 const shutdownTimeout = 30 * time.Second
@@ -47,7 +47,7 @@ func startGRPCServer(
 ) error {
 	grpcServer := grpc.NewServer(grpc.UnaryInterceptor(makeGrpcUnaryInterceptor(logger)))
 
-	api.RegisterInventoryInternalServiceServer(grpcServer, transport.NewInternalAPI())
+	api.RegisterProductInternalServiceServer(grpcServer, transport2.NewInternalAPI())
 
 	listener, err := net.Listen("tcp", config.ServeGRPCAddress)
 	if err != nil {
@@ -87,8 +87,8 @@ func shutdownGRPCServer(server *grpc.Server, logger *log.Logger) {
 }
 
 func makeGrpcUnaryInterceptor(logger *log.Logger) grpc.UnaryServerInterceptor {
-	loggerInterceptor := transport.MakeLoggerServerInterceptor(logger)
-	errorInterceptor := transport.ErrorInterceptor{Logger: logger}
+	loggerInterceptor := transport2.MakeLoggerServerInterceptor(logger)
+	errorInterceptor := transport2.ErrorInterceptor{Logger: logger}
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 		resp, err = loggerInterceptor(ctx, req, info, handler)
 		return resp, errorInterceptor.TranslateGRPCError(err)

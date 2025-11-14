@@ -1,4 +1,4 @@
-# Inventory
+# Product
 
 Для сборки:
 ```bash

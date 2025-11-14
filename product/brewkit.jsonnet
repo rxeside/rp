@@ -1,12 +1,12 @@
 local project = import 'brewkit/project.libsonnet';
 
 local appIDs = [
-    'inventory',
+    'product',
 ];
 
 local proto = [
     'api/client/testinternal/testinternal.proto',
-    'api/server/inventoryinternal/inventoryinternal.proto',
+    'api/server/productinternal/productinternal.proto',
 ];
 
 project.project(appIDs, proto)

@@ -1,9 +1,9 @@
 syntax = "proto3";
-package Inventory;
+package user;
 
-option go_package = "/.;inventoryinternal";
+option go_package = "/.;productinternal";
 
-service InventoryInternalService {
+service ProductInternalService {
   rpc Ping(PingRequest) returns (PingResponse);
 }
 
