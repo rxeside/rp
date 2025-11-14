@@ -7,7 +7,7 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/* && \
     apt-get clean && \
     groupadd -g 1001 microuser && \
-    useradd -u 1001 -r -g 1001 -s /sbin/nologin -c "go microservice payment" microuser
+    useradd -u 1001 -r -g 1001 -s /sbin/nologin -c "go microservice user" microuser
 
 ADD ./bin/payment /app/bin/
 ADD ./data /app/data
