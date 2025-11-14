@@ -2,7 +2,6 @@ package service
 
 import (
 	"errors"
-	"orderservice/pkg/common/event"
 	"testing"
 	"time"
 
@@ -10,10 +9,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
+	"orderservice/pkg/common/event"
 	"orderservice/pkg/orderservice/domain/model"
 )
-
-// --- Mocks ---
 
 type MockOrderRepository struct {
 	mock.Mock
@@ -89,7 +87,7 @@ func TestCreateOrder_Success(t *testing.T) {
 		return e.OrderID == orderID && e.CustomerID == customerID
 	})).Return(nil)
 
-	svc := NewOrderService(orderRepo, nil, eventDispatcher)
+	svc := NewOrderService(orderRepo, eventDispatcher)
 
 	id, err := svc.CreateOrder(customerID)
 
@@ -109,7 +107,7 @@ func TestCreateOrder_RepoError(t *testing.T) {
 	orderRepo.On("NextID").Return(orderID, nil)
 	orderRepo.On("Store", mock.Anything).Return(errors.New("db down"))
 
-	svc := NewOrderService(orderRepo, nil, eventDisp)
+	svc := NewOrderService(orderRepo, eventDisp)
 
 	_, err := svc.CreateOrder(customerID)
 	assert.Error(t, err)
@@ -128,7 +126,7 @@ func TestCreateOrder_EventDispatchError(t *testing.T) {
 	orderRepo.On("Store", mock.Anything).Return(nil)
 	eventDisp.On("Dispatch", mock.Anything).Return(errors.New("kafka unreachable"))
 
-	svc := NewOrderService(orderRepo, nil, eventDisp)
+	svc := NewOrderService(orderRepo, eventDisp)
 
 	_, err := svc.CreateOrder(customerID)
 	assert.Error(t, err)
@@ -149,11 +147,11 @@ func TestRemoveOrder_Success(t *testing.T) {
 		return o.ID == orderID && o.DeletedAt != nil
 	})).Return(nil)
 
-	eventDisp.On("Dispatch", mock.MatchedBy(func(e model.OrderDeleted) bool {
+	eventDisp.On("Dispatch", mock.MatchedBy(func(e model.OrderRemoved) bool {
 		return e.OrderID == orderID
 	})).Return(nil)
 
-	svc := NewOrderService(orderRepo, nil, eventDisp)
+	svc := NewOrderService(orderRepo, eventDisp)
 
 	err := svc.RemoveOrder(orderID)
 	assert.NoError(t, err)
@@ -168,7 +166,7 @@ func TestRemoveOrder_NotFound_Idempotent(t *testing.T) {
 	orderID := uuid.New()
 	orderRepo.On("Find", orderID).Return(nil, model.ErrOrderNotFound)
 
-	svc := NewOrderService(orderRepo, nil, eventDisp)
+	svc := NewOrderService(orderRepo, eventDisp)
 
 	err := svc.RemoveOrder(orderID)
 	assert.NoError(t, err)
@@ -182,7 +180,7 @@ func TestRemoveOrder_FindError(t *testing.T) {
 	orderID := uuid.New()
 	orderRepo.On("Find", orderID).Return(nil, errors.New("db timeout"))
 
-	svc := NewOrderService(orderRepo, nil, eventDisp)
+	svc := NewOrderService(orderRepo, eventDisp)
 
 	err := svc.RemoveOrder(orderID)
 	assert.Error(t, err)
@@ -205,7 +203,7 @@ func TestSetStatus_ValidTransition_OpenToPending(t *testing.T) {
 		return e.OrderID == orderID && e.From == model.Open && e.To == model.Pending
 	})).Return(nil)
 
-	svc := NewOrderService(orderRepo, nil, eventDisp)
+	svc := NewOrderService(orderRepo, eventDisp)
 
 	err := svc.SetStatus(orderID, model.Pending)
 	assert.NoError(t, err)
@@ -227,7 +225,7 @@ func TestSetStatus_InvalidTransition_PaidToOpen(t *testing.T) {
 
 	orderRepo.On("Find", orderID).Return(order, nil)
 
-	svc := NewOrderService(orderRepo, nil, eventDisp)
+	svc := NewOrderService(orderRepo, eventDisp)
 
 	err := svc.SetStatus(orderID, model.Open)
 	assert.ErrorIs(t, err, ErrInvalidOrderStatus)
@@ -241,7 +239,7 @@ func TestSetStatus_OrderNotFound(t *testing.T) {
 	orderID := uuid.New()
 	orderRepo.On("Find", orderID).Return(nil, model.ErrOrderNotFound)
 
-	svc := NewOrderService(orderRepo, nil, eventDisp)
+	svc := NewOrderService(orderRepo, eventDisp)
 
 	err := svc.SetStatus(orderID, model.Cancelled)
 	assert.ErrorIs(t, err, model.ErrOrderNotFound)
@@ -271,11 +269,10 @@ func TestAddItem_Success(t *testing.T) {
 		return e.OrderID == orderID && len(e.AddedItems) == 1 && e.AddedItems[0] == productID
 	})).Return(nil)
 
-	svc := NewOrderService(orderRepo, nil, eventDisp)
+	svc := NewOrderService(orderRepo, eventDisp)
 
-	id, err := svc.AddItem(orderID, productID, price)
+	err := svc.AddItem(orderID, productID, price)
 	assert.NoError(t, err)
-	assert.Equal(t, productID, id)
 }
 
 func TestAddItem_OrderNotOpen(t *testing.T) {
@@ -289,9 +286,9 @@ func TestAddItem_OrderNotOpen(t *testing.T) {
 	order := newPendingOrder(orderID, customerID)
 	orderRepo.On("Find", orderID).Return(order, nil)
 
-	svc := NewOrderService(orderRepo, nil, eventDisp)
+	svc := NewOrderService(orderRepo, eventDisp)
 
-	_, err := svc.AddItem(orderID, productID, 10.0)
+	err := svc.AddItem(orderID, productID, 10.0)
 	assert.ErrorIs(t, err, ErrInvalidOrderStatus)
 }
 
@@ -303,9 +300,9 @@ func TestAddItem_OrderNotFound(t *testing.T) {
 	productID := uuid.New()
 	orderRepo.On("Find", orderID).Return(nil, model.ErrOrderNotFound)
 
-	svc := NewOrderService(orderRepo, nil, eventDisp)
+	svc := NewOrderService(orderRepo, eventDisp)
 
-	_, err := svc.AddItem(orderID, productID, 10.0)
+	err := svc.AddItem(orderID, productID, 10.0)
 	assert.ErrorIs(t, err, model.ErrOrderNotFound)
 }
 
@@ -336,7 +333,7 @@ func TestRemoveItem_Success(t *testing.T) {
 		return e.OrderID == orderID && len(e.RemovedItems) == 1 && e.RemovedItems[0] == itemToRemove
 	})).Return(nil)
 
-	svc := NewOrderService(orderRepo, nil, eventDisp)
+	svc := NewOrderService(orderRepo, eventDisp)
 
 	err := svc.RemoveItem(orderID, itemToRemove)
 	assert.NoError(t, err)
@@ -357,7 +354,7 @@ func TestRemoveItem_ItemNotFound_Idempotent(t *testing.T) {
 
 	orderRepo.On("Find", orderID).Return(order, nil)
 
-	svc := NewOrderService(orderRepo, nil, eventDisp)
+	svc := NewOrderService(orderRepo, eventDisp)
 
 	err := svc.RemoveItem(orderID, nonExistentItem)
 	assert.NoError(t, err)
@@ -375,7 +372,7 @@ func TestRemoveItem_OrderNotOpen(t *testing.T) {
 	order := newPendingOrder(orderID, customerID)
 	orderRepo.On("Find", orderID).Return(order, nil)
 
-	svc := NewOrderService(orderRepo, nil, eventDisp)
+	svc := NewOrderService(orderRepo, eventDisp)
 
 	err := svc.RemoveItem(orderID, itemID)
 	assert.ErrorIs(t, err, ErrInvalidOrderStatus)

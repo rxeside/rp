@@ -6,7 +6,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"orderservice/pkg/common/event"
+	commonevent "orderservice/pkg/common/event"
 	"orderservice/pkg/orderservice/domain/model"
 )
 
@@ -14,41 +14,34 @@ var (
 	ErrInvalidOrderStatus = errors.New("invalid order status")
 )
 
-type OrderService interface {
+type Order interface {
 	CreateOrder(customerID uuid.UUID) (uuid.UUID, error)
 	RemoveOrder(orderID uuid.UUID) error
 	SetStatus(orderID uuid.UUID, status model.OrderStatus) error
-
-	AddItem(orderID, productID uuid.UUID, price float64) (uuid.UUID, error)
+	AddItem(orderID, productID uuid.UUID, price float64) error
 	RemoveItem(orderID, itemID uuid.UUID) error
 }
 
-func NewOrderService(
-	orderRepo model.OrderRepository,
-	orderItemRepo model.OrderItemRepository,
-	eventDispatcher event.Dispatcher,
-) OrderService {
+func NewOrderService(repo model.OrderRepository, dispatcher commonevent.Dispatcher) Order {
 	return &orderService{
-		orderRepo:       orderRepo,
-		orderItemRepo:   orderItemRepo,
-		eventDispatcher: eventDispatcher,
+		repo:       repo,
+		dispatcher: dispatcher,
 	}
 }
 
 type orderService struct {
-	orderRepo       model.OrderRepository
-	orderItemRepo   model.OrderItemRepository
-	eventDispatcher event.Dispatcher
+	repo       model.OrderRepository
+	dispatcher commonevent.Dispatcher
 }
 
-func (o *orderService) CreateOrder(customerID uuid.UUID) (uuid.UUID, error) {
-	orderID, err := o.orderRepo.NextID()
+func (o orderService) CreateOrder(customerID uuid.UUID) (uuid.UUID, error) {
+	orderID, err := o.repo.NextID()
 	if err != nil {
 		return uuid.Nil, err
 	}
 
 	currentTime := time.Now()
-	err = o.orderRepo.Store(&model.Order{
+	err = o.repo.Store(&model.Order{
 		ID:         orderID,
 		CustomerID: customerID,
 		Status:     model.Open,
@@ -59,14 +52,14 @@ func (o *orderService) CreateOrder(customerID uuid.UUID) (uuid.UUID, error) {
 		return uuid.Nil, err
 	}
 
-	return orderID, o.eventDispatcher.Dispatch(model.OrderCreated{
+	return orderID, o.dispatcher.Dispatch(model.OrderCreated{
 		OrderID:    orderID,
 		CustomerID: customerID,
 	})
 }
 
-func (o *orderService) RemoveOrder(orderID uuid.UUID) error {
-	order, err := o.orderRepo.Find(orderID)
+func (o orderService) RemoveOrder(orderID uuid.UUID) error {
+	order, err := o.repo.Find(orderID)
 	if err != nil {
 		if errors.Is(err, model.ErrOrderNotFound) {
 			return nil
@@ -78,17 +71,17 @@ func (o *orderService) RemoveOrder(orderID uuid.UUID) error {
 	order.DeletedAt = &now
 	order.UpdatedAt = now
 
-	if err = o.orderRepo.Store(order); err != nil {
+	if err = o.repo.Store(order); err != nil {
 		return err
 	}
 
-	return o.eventDispatcher.Dispatch(model.OrderDeleted{
+	return o.dispatcher.Dispatch(model.OrderRemoved{
 		OrderID: orderID,
 	})
 }
 
-func (o *orderService) SetStatus(orderID uuid.UUID, status model.OrderStatus) error {
-	order, err := o.orderRepo.Find(orderID)
+func (o orderService) SetStatus(orderID uuid.UUID, status model.OrderStatus) error {
+	order, err := o.repo.Find(orderID)
 	if err != nil {
 		return err
 	}
@@ -102,25 +95,25 @@ func (o *orderService) SetStatus(orderID uuid.UUID, status model.OrderStatus) er
 	order.Status = status
 	order.UpdatedAt = time.Now()
 
-	if err = o.orderRepo.Store(order); err != nil {
+	if err = o.repo.Store(order); err != nil {
 		return err
 	}
 
-	return o.eventDispatcher.Dispatch(model.OrderStatusChanged{
+	return o.dispatcher.Dispatch(model.OrderStatusChanged{
 		OrderID: orderID,
 		From:    oldStatus,
 		To:      status,
 	})
 }
 
-func (o *orderService) AddItem(orderID, productID uuid.UUID, price float64) (uuid.UUID, error) {
-	order, err := o.orderRepo.Find(orderID)
+func (o orderService) AddItem(orderID, productID uuid.UUID, price float64) error {
+	order, err := o.repo.Find(orderID)
 	if err != nil {
-		return uuid.Nil, err
+		return err
 	}
 
 	if order.Status != model.Open {
-		return uuid.Nil, ErrInvalidOrderStatus
+		return ErrInvalidOrderStatus
 	}
 
 	order.Items = append(order.Items, model.OrderItem{
@@ -128,19 +121,20 @@ func (o *orderService) AddItem(orderID, productID uuid.UUID, price float64) (uui
 		ProductID:  productID,
 		TotalPrice: price,
 	})
-	err = o.orderRepo.Store(order)
+
+	err = o.repo.Store(order)
 	if err != nil {
-		return uuid.Nil, err
+		return err
 	}
 
-	return productID, o.eventDispatcher.Dispatch(model.OrderItemsChanged{
+	return o.dispatcher.Dispatch(model.OrderItemsChanged{
 		OrderID:    orderID,
 		AddedItems: []uuid.UUID{productID},
 	})
 }
 
-func (o *orderService) RemoveItem(orderID, itemID uuid.UUID) error {
-	order, err := o.orderRepo.Find(orderID)
+func (o orderService) RemoveItem(orderID, itemID uuid.UUID) error {
+	order, err := o.repo.Find(orderID)
 	if err != nil {
 		return err
 	}
@@ -166,17 +160,17 @@ func (o *orderService) RemoveItem(orderID, itemID uuid.UUID) error {
 	order.Items = newItems
 	order.UpdatedAt = time.Now()
 
-	if err = o.orderRepo.Store(order); err != nil {
+	if err = o.repo.Store(order); err != nil {
 		return err
 	}
 
-	return o.eventDispatcher.Dispatch(model.OrderItemsChanged{
+	return o.dispatcher.Dispatch(model.OrderItemsChanged{
 		OrderID:      orderID,
 		RemovedItems: []uuid.UUID{itemID},
 	})
 }
 
-func (o *orderService) isValidStatusTransition(from, to model.OrderStatus) bool {
+func (o orderService) isValidStatusTransition(from, to model.OrderStatus) bool {
 	switch from {
 	case model.Open:
 		return to == model.Pending || to == model.Cancelled

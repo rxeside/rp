@@ -91,7 +91,7 @@ local gosources = [
             },
 
             check: {
-                from: images.golangcilint,
+                from: "gobase",
                 workdir: "/app",
                 env: {
                     GOCACHE: "/app/cache/go-build",
@@ -106,7 +106,7 @@ local gosources = [
                         '/app'
                     ),
                 ],
-                command: "golangci-lint run",
+                command: "go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.5 && golangci-lint run",
             },
         },
     },

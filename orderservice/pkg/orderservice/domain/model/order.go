@@ -28,6 +28,13 @@ type Order struct {
 	DeletedAt  *time.Time
 }
 
+type OrderItem struct {
+	OrderID    uuid.UUID
+	ProductID  uuid.UUID
+	Count      int
+	TotalPrice float64
+}
+
 type OrderRepository interface {
 	NextID() (uuid.UUID, error)
 	Store(order *Order) error

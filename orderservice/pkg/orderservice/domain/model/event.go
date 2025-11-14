@@ -21,12 +21,12 @@ func (e OrderItemsChanged) EventType() string {
 	return "OrderItemsChanged"
 }
 
-type OrderDeleted struct {
+type OrderRemoved struct {
 	OrderID uuid.UUID
 }
 
-func (e OrderDeleted) EventType() string {
-	return "OrderDeleted"
+func (e OrderRemoved) EventType() string {
+	return "OrderRemoved"
 }
 
 type OrderStatusChanged struct {
