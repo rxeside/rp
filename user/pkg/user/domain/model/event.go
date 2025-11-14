@@ -2,11 +2,28 @@ package model
 
 import "github.com/google/uuid"
 
-type OrderCreated struct {
-	OrderID    uuid.UUID
-	CustomerID uuid.UUID
+type UserCreated struct {
+	UserID uuid.UUID
+	Login  string
+	Email  string
 }
 
-func (e OrderCreated) EventType() string {
-	return "OrderCreated"
+func (e UserCreated) EventType() string {
+	return "UserCreated"
+}
+
+type UserUpdated struct {
+	UserID uuid.UUID
+}
+
+func (e UserUpdated) EventType() string {
+	return "UserUpdated"
+}
+
+type UserRemoved struct {
+	UserID uuid.UUID
+}
+
+func (e UserRemoved) EventType() string {
+	return "UserRemoved"
 }
