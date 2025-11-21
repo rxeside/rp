@@ -17,6 +17,8 @@ type Notification struct {
 	DeletedAt *time.Time
 }
 
+// Простой нотификейшен, но с копией юзера
+
 type NotificationRepository interface {
 	NextID() (uuid.UUID, error)
 	Store(notification *Notification) error
