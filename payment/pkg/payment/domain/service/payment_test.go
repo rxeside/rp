@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
-	"payment/pkg/common/event"
 	"payment/pkg/payment/domain/model"
 )
 
@@ -41,15 +40,6 @@ func (m *MockPaymentRepository) Find(id uuid.UUID) (*model.Payment, error) {
 
 func (m *MockPaymentRepository) Remove(id uuid.UUID) error {
 	args := m.Called(id)
-	return args.Error(0)
-}
-
-type MockEventDispatcher struct {
-	mock.Mock
-}
-
-func (m *MockEventDispatcher) Dispatch(event event.Event) error {
-	args := m.Called(event)
 	return args.Error(0)
 }
 

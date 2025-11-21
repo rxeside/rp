@@ -18,6 +18,7 @@ const (
 
 type Payment struct {
 	ID        uuid.UUID
+	WalletID  uuid.UUID
 	OrderID   uuid.UUID
 	Amount    float64
 	Status    PaymentStatus
