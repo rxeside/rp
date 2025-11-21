@@ -9,10 +9,10 @@ services:
     ports:
       - "8081:8081"
     environment:
-      USER_DATABASE_HOST: order-db
-      USER_DATABASE_NAME: order_db
-      USER_DATABASE_USER: order
-      USER_DATABASE_PASSWORD: 12345Q
+      ORDER_DATABASE_HOST: order-db
+      ORDER_DATABASE_NAME: order_db
+      ORDER_DATABASE_USER: order
+      ORDER_DATABASE_PASSWORD: 12345Q
     depends_on:
       order-db:
         condition: service_healthy
@@ -25,12 +25,12 @@ services:
     command:
       - workflow-worker
     environment:
-      USER_DATABASE_HOST: order-db
-      USER_DATABASE_NAME: order_db
-      USER_DATABASE_USER: order
-      USER_DATABASE_PASSWORD: 12345Q
+      ORDER_DATABASE_HOST: order-db
+      ORDER_DATABASE_NAME: order_db
+      ORDER_DATABASE_USER: order
+      ORDER_DATABASE_PASSWORD: 12345Q
 
-      USER_TEMPORAL_HOST: order-temporal:7233
+      ORDER_TEMPORAL_HOST: order-temporal:7233
     depends_on:
       order-db:
         condition: service_healthy
@@ -43,16 +43,16 @@ services:
     command:
       - message-handler
     environment:
-      USER_DATABASE_HOST: order-db
-      USER_DATABASE_NAME: order_db
-      USER_DATABASE_USER: order
-      USER_DATABASE_PASSWORD: 12345Q
+      ORDER_DATABASE_HOST: order-db
+      ORDER_DATABASE_NAME: order_db
+      ORDER_DATABASE_USER: order
+      ORDER_DATABASE_PASSWORD: 12345Q
 
-      USER_AMQP_HOST: order-rmq
-      USER_AMQP_USER: guest
-      USER_AMQP_PASSWORD: guest
+      ORDER_AMQP_HOST: order-rmq
+      ORDER_AMQP_USER: guest
+      ORDER_AMQP_PASSWORD: guest
 
-      USER_TEMPORAL_HOST: order-temporal:7233
+      ORDER_TEMPORAL_HOST: order-temporal:7233
     depends_on:
       order-db:
         condition: service_healthy

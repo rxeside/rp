@@ -28,7 +28,7 @@ func (v version2) Description() string {
 
 func (v version2) Up(ctx context.Context) error {
 	_, err := v.client.ExecContext(ctx, `
-		CREATE TABLE order_item
+		CREATE TABLE IF NOT EXISTS order_item
 		(
 		    order_id     VARCHAR(64)  NOT NULL,
 		    product_id   VARCHAR(64)  NOT NULL,
