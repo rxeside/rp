@@ -1,29 +1,49 @@
 package model
 
-import "github.com/google/uuid"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type UserCreated struct {
-	UserID uuid.UUID
-	Login  string
-	Email  string
+	UserID    uuid.UUID
+	Status    UserStatus
+	Login     string
+	Email     *string
+	Telegram  *string
+	CreatedAt time.Time
 }
 
-func (e UserCreated) EventType() string {
-	return "UserCreated"
+func (u UserCreated) Type() string {
+	return "user_created"
 }
 
 type UserUpdated struct {
-	UserID uuid.UUID
+	UserID        uuid.UUID
+	UpdatedFields *struct {
+		Status   *UserStatus
+		Email    *string
+		Telegram *string
+	}
+	RemovedFields *struct {
+		Email    *bool
+		Telegram *bool
+	}
+	UpdatedAt time.Time
 }
 
-func (e UserUpdated) EventType() string {
-	return "UserUpdated"
+func (u UserUpdated) Type() string {
+	return "user_updated"
 }
 
-type UserRemoved struct {
-	UserID uuid.UUID
+type UserDeleted struct {
+	UserID    uuid.UUID
+	Status    UserStatus
+	DeletedAt time.Time
+	Hard      bool
 }
 
-func (e UserRemoved) EventType() string {
-	return "UserRemoved"
+func (u UserDeleted) Type() string {
+	return "user_deleted"
 }

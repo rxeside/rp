@@ -2,43 +2,60 @@ package service
 
 import (
 	"errors"
+	"reflect"
 	"time"
 
 	"github.com/google/uuid"
 
-	commonevent "user/pkg/common/event"
-	"user/pkg/user/domain/model"
+	"userservice/pkg/common/domain"
+	"userservice/pkg/user/domain/model"
 )
 
-type User interface {
-	CreateUser(login, email string) (uuid.UUID, error)
-	UpdateUser(userID uuid.UUID, login, email string) error
-	RemoveUser(userID uuid.UUID) error
+type UserService interface {
+	CreateUser(login string) (uuid.UUID, error)
+	UpdateUserStatus(userID uuid.UUID, status model.UserStatus) error
+	UpdateUserEmail(userID uuid.UUID, email *string) error
+	UpdateUserTelegram(userID uuid.UUID, telegram *string) error
+	DeleteUser(userID uuid.UUID, hard bool) error
 }
 
-func NewUserService(repo model.UserRepository, dispatcher commonevent.Dispatcher) User {
+func NewUserService(
+	userRepository model.UserRepository,
+	eventDispatcher domain.EventDispatcher,
+) UserService {
 	return &userService{
-		repo:       repo,
-		dispatcher: dispatcher,
+		userRepository:  userRepository,
+		eventDispatcher: eventDispatcher,
 	}
 }
 
 type userService struct {
-	repo       model.UserRepository
-	dispatcher commonevent.Dispatcher
+	userRepository  model.UserRepository
+	eventDispatcher domain.EventDispatcher
 }
 
-func (u userService) CreateUser(login, email string) (uuid.UUID, error) {
-	userID, err := u.repo.NextID()
+func (u userService) CreateUser(login string) (uuid.UUID, error) {
+	_, err := u.userRepository.Find(model.FindSpec{
+		Login: &login,
+	})
+	if err != nil && !errors.Is(err, model.ErrUserNotFound) {
+		return uuid.Nil, err
+	}
+	if err == nil {
+		return uuid.Nil, model.ErrUserLoginAlreadyUsed
+	}
+
+	userID, err := u.userRepository.NextID()
 	if err != nil {
 		return uuid.Nil, err
 	}
 
+	status := model.Blocked
 	currentTime := time.Now()
-	err = u.repo.Store(&model.User{
-		ID:        userID,
+	err = u.userRepository.Store(model.User{
+		UserID:    userID,
+		Status:    status,
 		Login:     login,
-		Email:     email,
 		CreatedAt: currentTime,
 		UpdatedAt: currentTime,
 	})
@@ -46,50 +63,185 @@ func (u userService) CreateUser(login, email string) (uuid.UUID, error) {
 		return uuid.Nil, err
 	}
 
-	return userID, u.dispatcher.Dispatch(model.UserCreated{
-		UserID: userID,
-		Login:  login,
-		Email:  email,
+	return userID, u.eventDispatcher.Dispatch(&model.UserCreated{
+		UserID:    userID,
+		Status:    status,
+		Login:     login,
+		CreatedAt: currentTime,
 	})
 }
 
-func (u userService) UpdateUser(userID uuid.UUID, login, email string) error {
-	user, err := u.repo.Find(userID)
+func (u userService) UpdateUserStatus(userID uuid.UUID, status model.UserStatus) error {
+	user, err := u.userRepository.Find(model.FindSpec{
+		UserID: &userID,
+	})
 	if err != nil {
 		return err
 	}
 
-	user.Login = login
-	user.Email = email
-	user.UpdatedAt = time.Now()
+	if user.Status == status {
+		return nil
+	}
 
-	if err = u.repo.Store(user); err != nil {
+	currentTime := time.Now()
+	user.Status = status
+	user.UpdatedAt = currentTime
+	err = u.userRepository.Store(*user)
+	if err != nil {
 		return err
 	}
 
-	return u.dispatcher.Dispatch(model.UserUpdated{
-		UserID: userID,
+	return u.eventDispatcher.Dispatch(&model.UserUpdated{
+		UserID:    userID,
+		UpdatedAt: currentTime,
+		UpdatedFields: &struct {
+			Status   *model.UserStatus
+			Email    *string
+			Telegram *string
+		}{Status: &status},
 	})
 }
 
-func (u userService) RemoveUser(userID uuid.UUID) error {
-	user, err := u.repo.Find(userID)
+// nolint:dupl
+func (u userService) UpdateUserEmail(userID uuid.UUID, email *string) error {
+	user, err := u.userRepository.Find(model.FindSpec{
+		UserID: &userID,
+	})
 	if err != nil {
-		if errors.Is(err, model.ErrUserNotFound) {
-			return nil
+		return err
+	}
+	if reflect.DeepEqual(user.Email, email) {
+		return nil
+	}
+
+	if email != nil {
+		userWithEmail, err := u.userRepository.Find(model.FindSpec{
+			Email: email,
+		})
+		if err != nil && !errors.Is(err, model.ErrUserNotFound) {
+			return err
 		}
+		if userWithEmail != nil && userWithEmail.UserID != user.UserID {
+			return model.ErrUserEmailAlreadyUsed
+		}
+	}
+
+	currentTime := time.Now()
+	user.Email = email
+	user.UpdatedAt = currentTime
+	err = u.userRepository.Store(*user)
+	if err != nil {
 		return err
 	}
 
-	now := time.Now()
-	user.DeletedAt = &now
-	user.UpdatedAt = now
-
-	if err = u.repo.Store(user); err != nil {
-		return err
+	if email == nil {
+		return u.eventDispatcher.Dispatch(&model.UserUpdated{
+			UserID:    userID,
+			UpdatedAt: currentTime,
+			RemovedFields: &struct {
+				Email    *bool
+				Telegram *bool
+			}{Email: toPtr(true)},
+		})
 	}
 
-	return u.dispatcher.Dispatch(model.UserRemoved{
-		UserID: userID,
+	return u.eventDispatcher.Dispatch(&model.UserUpdated{
+		UserID:    userID,
+		UpdatedAt: currentTime,
+		UpdatedFields: &struct {
+			Status   *model.UserStatus
+			Email    *string
+			Telegram *string
+		}{Email: email},
 	})
+}
+
+// nolint:dupl
+func (u userService) UpdateUserTelegram(userID uuid.UUID, telegram *string) error {
+	user, err := u.userRepository.Find(model.FindSpec{
+		UserID: &userID,
+	})
+	if err != nil {
+		return err
+	}
+	if reflect.DeepEqual(user.Telegram, telegram) {
+		return nil
+	}
+
+	if telegram != nil {
+		userWithTelegram, err := u.userRepository.Find(model.FindSpec{
+			Telegram: telegram,
+		})
+		if err != nil && !errors.Is(err, model.ErrUserNotFound) {
+			return err
+		}
+		if userWithTelegram != nil && userWithTelegram.UserID != user.UserID {
+			return model.ErrUserTelegramAlreadyUsed
+		}
+	}
+
+	currentTime := time.Now()
+	user.Telegram = telegram
+	user.UpdatedAt = currentTime
+	err = u.userRepository.Store(*user)
+	if err != nil {
+		return err
+	}
+
+	if telegram == nil {
+		return u.eventDispatcher.Dispatch(&model.UserUpdated{
+			UserID:    userID,
+			UpdatedAt: currentTime,
+			RemovedFields: &struct {
+				Email    *bool
+				Telegram *bool
+			}{Telegram: toPtr(true)},
+		})
+	}
+
+	return u.eventDispatcher.Dispatch(&model.UserUpdated{
+		UserID:    userID,
+		UpdatedAt: currentTime,
+		UpdatedFields: &struct {
+			Status   *model.UserStatus
+			Email    *string
+			Telegram *string
+		}{Telegram: telegram},
+	})
+}
+
+func (u userService) DeleteUser(userID uuid.UUID, hard bool) error {
+	user, err := u.userRepository.Find(model.FindSpec{
+		UserID: &userID,
+	})
+	if err != nil {
+		return err
+	}
+
+	if hard {
+		err = u.userRepository.HardDelete(userID)
+		if err != nil {
+			return err
+		}
+	}
+
+	currentTime := time.Now()
+	user.Status = model.Deleted
+	user.UpdatedAt = currentTime
+	user.DeletedAt = &currentTime
+	err = u.userRepository.Store(*user)
+	if err != nil {
+		return err
+	}
+
+	return u.eventDispatcher.Dispatch(&model.UserDeleted{
+		UserID:    userID,
+		Status:    model.Deleted,
+		DeletedAt: currentTime,
+		Hard:      hard,
+	})
+}
+
+func toPtr[T any](v T) *T {
+	return &v
 }
