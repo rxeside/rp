@@ -159,7 +159,7 @@ func TestRemovePayment_NotFound_Idempotent(t *testing.T) {
 	eventDisp := new(MockEventDispatcher)
 
 	paymentID := uuid.New()
-	paymentRepo.On("Find", paymentID).Return(nil, ErrPaymentNotFound)
+	paymentRepo.On("Find", paymentID).Return(nil, model.ErrPaymentNotFound)
 
 	svc := NewPaymentService(paymentRepo, eventDisp)
 
@@ -226,12 +226,12 @@ func TestSetStatus_PaymentNotFound(t *testing.T) {
 	eventDisp := new(MockEventDispatcher)
 
 	paymentID := uuid.New()
-	paymentRepo.On("Find", paymentID).Return(nil, ErrPaymentNotFound)
+	paymentRepo.On("Find", paymentID).Return(nil, model.ErrPaymentNotFound)
 
 	svc := NewPaymentService(paymentRepo, eventDisp)
 
 	err := svc.SetStatus(paymentID, model.Cancelled)
-	assert.ErrorIs(t, err, ErrPaymentNotFound)
+	assert.ErrorIs(t, err, model.ErrPaymentNotFound)
 }
 
 func TestIsValidStatusTransition_Matrix(t *testing.T) {

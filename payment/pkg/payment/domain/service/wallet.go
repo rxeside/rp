@@ -14,7 +14,6 @@ const defaultBalance = 100000.0
 
 var (
 	ErrInvalidWalletBalance = errors.New("invalid wallet balance")
-	ErrWalletNotFound       = errors.New("wallet not found")
 )
 
 type Wallet interface {
@@ -64,7 +63,7 @@ func (w walletService) CreateWallet(userID uuid.UUID) (uuid.UUID, error) {
 func (w walletService) RemoveWallet(walletID uuid.UUID) error {
 	wallet, err := w.repo.Find(walletID)
 	if err != nil {
-		if errors.Is(err, ErrWalletNotFound) {
+		if errors.Is(err, model.ErrWalletNotFound) {
 			return nil
 		}
 		return err

@@ -8,7 +8,7 @@ type WalletCreated struct {
 	Balance  float64
 }
 
-func (e WalletCreated) EventType() string {
+func (e WalletCreated) Type() string {
 	return "WalletCreated"
 }
 
@@ -18,7 +18,7 @@ type WalletBalanceChanged struct {
 	NewBalance float64
 }
 
-func (e WalletBalanceChanged) EventType() string {
+func (e WalletBalanceChanged) Type() string {
 	return "WalletBalanceChanged"
 }
 
@@ -26,7 +26,7 @@ type WalletRemoved struct {
 	WalletID uuid.UUID
 }
 
-func (e WalletRemoved) EventType() string {
+func (e WalletRemoved) Type() string {
 	return "WalletRemoved"
 }
 
@@ -37,7 +37,7 @@ type PaymentCreated struct {
 	Amount    float64
 }
 
-func (e PaymentCreated) EventType() string {
+func (e PaymentCreated) Type() string {
 	return "PaymentCreated"
 }
 
@@ -47,7 +47,7 @@ type PaymentStatusChanged struct {
 	To        PaymentStatus
 }
 
-func (e PaymentStatusChanged) EventType() string {
+func (e PaymentStatusChanged) Type() string {
 	return "PaymentStatusChanged"
 }
 
@@ -55,6 +55,6 @@ type PaymentRemoved struct {
 	PaymentID uuid.UUID
 }
 
-func (e PaymentRemoved) EventType() string {
+func (e PaymentRemoved) Type() string {
 	return "PaymentRemoved"
 }

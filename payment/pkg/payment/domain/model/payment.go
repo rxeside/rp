@@ -1,10 +1,13 @@
 package model
 
 import (
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
 )
+
+var ErrPaymentNotFound = errors.New("payment not found")
 
 type PaymentStatus int
 

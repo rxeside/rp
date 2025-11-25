@@ -11,7 +11,6 @@ import (
 )
 
 var (
-	ErrPaymentNotFound      = errors.New("payment not found")
 	ErrInvalidPaymentStatus = errors.New("invalid payment status")
 )
 
@@ -62,7 +61,7 @@ func (p paymentService) CreatePayment(orderID uuid.UUID, amount float64) (uuid.U
 func (p paymentService) RemovePayment(paymentID uuid.UUID) error {
 	payment, err := p.repo.Find(paymentID)
 	if err != nil {
-		if errors.Is(err, ErrPaymentNotFound) {
+		if errors.Is(err, model.ErrPaymentNotFound) {
 			return nil
 		}
 		return err

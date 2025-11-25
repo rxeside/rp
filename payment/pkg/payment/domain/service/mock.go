@@ -1,16 +1,16 @@
 package service
 
 import (
-	"payment/pkg/common/event"
-
 	"github.com/stretchr/testify/mock"
+
+	commonevent "payment/pkg/common/event"
 )
 
 type MockEventDispatcher struct {
 	mock.Mock
 }
 
-func (m *MockEventDispatcher) Dispatch(event event.Event) error {
+func (m *MockEventDispatcher) Dispatch(event commonevent.Event) error {
 	args := m.Called(event)
 	return args.Error(0)
 }

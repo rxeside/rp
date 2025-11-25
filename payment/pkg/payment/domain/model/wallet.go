@@ -1,10 +1,13 @@
 package model
 
 import (
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
 )
+
+var ErrWalletNotFound = errors.New("wallet not found")
 
 type Wallet struct {
 	ID        uuid.UUID

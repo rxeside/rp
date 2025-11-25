@@ -1,7 +1,7 @@
 .idea/
 /vendor/
 
-bin/user
+bin/userservice
 !bin/
 
 .env

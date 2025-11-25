@@ -147,7 +147,7 @@ func TestRemoveWallet_NotFound_Idempotent(t *testing.T) {
 	eventDisp := new(MockEventDispatcher)
 
 	walletID := uuid.New()
-	walletRepo.On("Find", walletID).Return(nil, ErrWalletNotFound)
+	walletRepo.On("Find", walletID).Return(nil, model.ErrWalletNotFound)
 
 	svc := NewWalletService(walletRepo, eventDisp)
 
@@ -203,11 +203,11 @@ func TestUpdateWalletBalance_WalletNotFound(t *testing.T) {
 	walletID := uuid.New()
 	newBalance := 150.0
 
-	walletRepo.On("Find", walletID).Return(nil, ErrWalletNotFound)
+	walletRepo.On("Find", walletID).Return(nil, model.ErrWalletNotFound)
 
 	svc := NewWalletService(walletRepo, eventDisp)
 
 	err := svc.UpdateWalletBalance(walletID, newBalance)
-	assert.ErrorIs(t, err, ErrWalletNotFound)
+	assert.ErrorIs(t, err, model.ErrWalletNotFound)
 	walletRepo.AssertExpectations(t)
 }
