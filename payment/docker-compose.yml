@@ -10,7 +10,7 @@ services:
       - "8081:8081"
     environment:
       PAYMENT_DATABASE_HOST: payment-db
-      PAYMENT_DATABASE_NAME: order_db
+      PAYMENT_DATABASE_NAME: payment_db
       PAYMENT_DATABASE_USER: payment
       PAYMENT_DATABASE_PASSWORD: 12345Q
     depends_on:
@@ -26,7 +26,7 @@ services:
       - workflow-worker
     environment:
       PAYMENT_DATABASE_HOST: payment-db
-      PAYMENT_DATABASE_NAME: order_db
+      PAYMENT_DATABASE_NAME: payment_db
       PAYMENT_DATABASE_USER: payment
       PAYMENT_DATABASE_PASSWORD: 12345Q
 
@@ -44,7 +44,7 @@ services:
       - message-handler
     environment:
       PAYMENT_DATABASE_HOST: payment-db
-      PAYMENT_DATABASE_NAME: order_db
+      PAYMENT_DATABASE_NAME: payment_db
       PAYMENT_DATABASE_USER: payment
       PAYMENT_DATABASE_PASSWORD: 12345Q
 
@@ -67,7 +67,7 @@ services:
       - "payment-db-data:/var/lib/mysql"
     environment:
       MYSQL_ALLOW_EMPTY_PASSWORD: yes
-      MYSQL_DATABASE: order_db
+      MYSQL_DATABASE: payment_db
       MYSQL_USER: payment
       MYSQL_PASSWORD: 12345Q
     ports:
