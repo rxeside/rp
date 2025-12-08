@@ -7,10 +7,10 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"userservice/api/server/userpublicapi"
-	appmodel "userservice/pkg/user/application/model"
-	"userservice/pkg/user/application/query"
-	"userservice/pkg/user/application/service"
+	"user/api/server/userpublicapi"
+	appmodel "user/pkg/user/application/model"
+	"user/pkg/user/application/query"
+	"user/pkg/user/application/service"
 )
 
 func NewUserInternalAPI(

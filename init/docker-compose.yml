@@ -1,0 +1,99 @@
+services:
+  rmq:
+    image: "rabbitmq:4.2.0-management-alpine"
+    container_name: rmq
+    hostname: rmq
+    ports:
+      - "15672:15672"
+    volumes:
+      - "rmq-data:/var/lib/rabbitmq/mnesia"
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 1s
+      timeout: 3s
+      retries: 30
+    networks:
+      - common-net
+
+  temporal-db:
+    image: mysql:8.0
+    container_name: temporal-db
+    environment:
+      MYSQL_ALLOW_EMPTY_PASSWORD: yes
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: temporal
+      MYSQL_USER: temporal
+      MYSQL_PASSWORD: 12345Q
+    volumes:
+      - temporal-db-data:/var/lib/mysql
+    healthcheck:
+      test: mysql -uroot -proot -e 'SELECT 1'
+      interval: 5s
+      timeout: 5s
+    networks:
+      - common-net
+
+  temporal:
+    container_name: temporal
+    depends_on:
+      temporal-db:
+        condition: service_healthy
+    environment:
+      - DB=mysql8
+      - DB_PORT=3306
+      - MYSQL_HOST=temporal-db
+      - MYSQL_USER=root
+      - MYSQL_PWD=root
+      - MYSQL_SEEDS=temporal-db
+      - MYSQL_DATABASE=temporal
+      - VISIBILITY_DATABASE=temporal_visibility
+      - DYNAMIC_CONFIG_FILE_PATH=config/dynamicconfig/development-sql.yaml
+      - TEMPORAL_ADDRESS=temporal:7233
+      - TEMPORAL_CLI_ADDRESS=temporal:7233
+    image: temporalio/auto-setup:1.29.1
+    ports:
+      - "7233:7233"
+    volumes:
+      - ./docker/data/temporal/dynamicconfig:/etc/temporal/config/dynamicconfig
+    healthcheck:
+      test: [ "CMD", "tctl", "namespace", "describe", "default" ]
+      interval: 10s
+      timeout: 10s
+      retries: 15
+      start_period: 60s
+    networks:
+      - common-net
+
+  temporal-ui:
+    image: temporalio/ui:2.34.0
+    container_name: temporal-ui
+    ports:
+      - "8090:8080"
+    environment:
+      - TEMPORAL_ADDRESS=temporal:7233
+      - TEMPORAL_CORS_ORIGINS=http://localhost:3000
+    depends_on:
+      - temporal
+    networks:
+      - common-net
+
+  temporal-admin-tools:
+    image: temporalio/admin-tools:1.29.1-tctl-1.18.4-cli-1.5.0
+    container_name: temporal-admin-tools
+    stdin_open: true
+    tty: true
+    environment:
+      - TEMPORAL_ADDRESS=temporal:7233
+      - TEMPORAL_CLI_ADDRESS=temporal:7233
+    depends_on:
+      - temporal
+    networks:
+      - common-net
+
+volumes:
+  rmq-data:
+  temporal-db-data:
+
+networks:
+  common-net:
+    external: true

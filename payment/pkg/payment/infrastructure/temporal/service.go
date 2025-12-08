@@ -2,6 +2,7 @@ package temporal
 
 import (
 	"context"
+	"fmt"
 
 	"go.temporal.io/sdk/client"
 
@@ -12,7 +13,7 @@ import (
 const TaskQueue = "payment_task_queue"
 
 type WorkflowService interface {
-	RunUserUpdatedWorkflow(ctx context.Context, id string, event model.PaymentCreated) error
+	RunCreateWalletWorkflow(ctx context.Context, id string, event model.UserCreated) error
 }
 
 func NewWorkflowService(temporalClient client.Client) WorkflowService {
@@ -25,14 +26,15 @@ type workflowService struct {
 	temporalClient client.Client
 }
 
-func (s *workflowService) RunUserUpdatedWorkflow(ctx context.Context, id string, event model.PaymentCreated) error {
+func (s *workflowService) RunCreateWalletWorkflow(ctx context.Context, id string, event model.UserCreated) error {
+	fmt.Println("RunCreateWalletWorkflow event = ", event)
 	_, err := s.temporalClient.ExecuteWorkflow(
 		ctx,
 		client.StartWorkflowOptions{
 			ID:        id,
 			TaskQueue: TaskQueue,
 		},
-		workflows.UserUpdatedWorkflow, event,
+		workflows.CreateWalletWorkflow, event,
 	)
 	return err
 }

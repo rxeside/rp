@@ -5,9 +5,9 @@ import (
 
 	"gitea.xscloud.ru/xscloud/golib/pkg/infrastructure/mysql"
 
-	"userservice/pkg/user/application/service"
-	"userservice/pkg/user/domain/model"
-	"userservice/pkg/user/infrastructure/mysql/repository"
+	"user/pkg/user/application/service"
+	"user/pkg/user/domain/model"
+	"user/pkg/user/infrastructure/mysql/repository"
 )
 
 func NewRepositoryProvider(client mysql.ClientContext) service.RepositoryProvider {

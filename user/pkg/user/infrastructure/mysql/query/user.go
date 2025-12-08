@@ -8,9 +8,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
-	appmodel "userservice/pkg/user/application/model"
-	"userservice/pkg/user/application/query"
-	"userservice/pkg/user/domain/model"
+	appmodel "user/pkg/user/application/model"
+	"user/pkg/user/application/query"
+	"user/pkg/user/domain/model"
 )
 
 func NewUserQueryService(client mysql.ClientContext) query.UserQueryService {

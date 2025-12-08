@@ -10,7 +10,7 @@ type NotificationCreated struct {
 	Message        string
 }
 
-func (e NotificationCreated) EventType() string {
+func (e NotificationCreated) Type() string {
 	return "NotificationCreated"
 }
 
@@ -20,7 +20,7 @@ type NotificationStatusChanged struct {
 	To             string
 }
 
-func (e NotificationStatusChanged) EventType() string {
+func (e NotificationStatusChanged) Type() string {
 	return "NotificationStatusChanged"
 }
 
@@ -28,6 +28,6 @@ type NotificationRemoved struct {
 	NotificationID uuid.UUID
 }
 
-func (e NotificationRemoved) EventType() string {
+func (e NotificationRemoved) Type() string {
 	return "NotificationRemoved"
 }

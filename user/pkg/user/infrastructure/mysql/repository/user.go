@@ -10,7 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
-	"userservice/pkg/user/domain/model"
+	"user/pkg/user/domain/model"
 )
 
 func NewUserRepository(ctx context.Context, client mysql.ClientContext) model.UserRepository {

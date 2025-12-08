@@ -64,7 +64,10 @@ func messageHandler(logger logging.Logger) *cli.Command {
 			bindConfig := &amqp.BindConfig{
 				QueueName:    integrationevent.QueueName,
 				ExchangeName: integrationevent.ExchangeName,
-				RoutingKeys:  []string{integrationevent.RoutingKeyPrefix + "#"},
+				RoutingKeys: []string{
+					integrationevent.RoutingKeyPrefix + "#",
+					"user.#",
+				},
 			}
 			amqpEventProducer := amqpConnection.Producer(
 				&amqp.ExchangeConfig{

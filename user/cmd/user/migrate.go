@@ -9,8 +9,8 @@ import (
 	outboxmigrations "gitea.xscloud.ru/xscloud/golib/pkg/infrastructure/outbox/migrations"
 	"github.com/urfave/cli/v2"
 
-	"userservice/pkg/user/infrastructure/integrationevent"
-	"userservice/pkg/user/infrastructure/migrations/database"
+	"user/pkg/user/infrastructure/integrationevent"
+	"user/pkg/user/infrastructure/migrations/database"
 )
 
 type migrateConfig struct {

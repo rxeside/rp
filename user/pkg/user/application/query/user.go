@@ -5,7 +5,7 @@ import (
 
 	"github.com/google/uuid"
 
-	appmodel "userservice/pkg/user/application/model"
+	appmodel "user/pkg/user/application/model"
 )
 
 type UserQueryService interface {

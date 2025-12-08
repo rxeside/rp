@@ -6,9 +6,9 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 
-	appmodel "userservice/pkg/user/application/model"
-	"userservice/pkg/user/domain/model"
-	"userservice/pkg/user/infrastructure/temporal/activity"
+	appmodel "user/pkg/user/application/model"
+	"user/pkg/user/domain/model"
+	"user/pkg/user/infrastructure/temporal/activity"
 )
 
 var userServiceActivities *activity.UserServiceActivities

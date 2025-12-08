@@ -12,11 +12,11 @@ import (
 	"github.com/urfave/cli/v2"
 	"golang.org/x/sync/errgroup"
 
-	appservice "userservice/pkg/user/application/service"
-	"userservice/pkg/user/infrastructure/integrationevent"
-	inframysql "userservice/pkg/user/infrastructure/mysql"
-	"userservice/pkg/user/infrastructure/temporal"
-	"userservice/pkg/user/infrastructure/temporal/worker"
+	appservice "user/pkg/user/application/service"
+	"user/pkg/user/infrastructure/integrationevent"
+	inframysql "user/pkg/user/infrastructure/mysql"
+	"user/pkg/user/infrastructure/temporal"
+	"user/pkg/user/infrastructure/temporal/worker"
 )
 
 type workflowWorkerConfig struct {
@@ -65,7 +65,12 @@ func workflowWorker(logger logging.Logger) *cli.Command {
 			errGroup := errgroup.Group{}
 			errGroup.Go(func() error {
 				w := worker.NewWorker(temporalClient, appservice.NewUserService(uow, luow, eventDispatcher))
-				return w.Run(worker.InterruptChannel())
+				logger.Info("Worker created, starting...")
+				err := w.Run(worker.InterruptChannel())
+				if err != nil {
+					logger.Info("Worker creating err = ", err)
+				}
+				return err
 			})
 
 			errGroup.Go(func() error {

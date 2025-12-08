@@ -5,7 +5,7 @@ import (
 
 	"gitea.xscloud.ru/xscloud/golib/pkg/application/outbox"
 
-	"userservice/pkg/common/domain"
+	"user/pkg/common/domain"
 )
 
 type domainEventDispatcher struct {

@@ -16,10 +16,10 @@ func InterruptChannel() <-chan interface{} {
 
 func NewWorker(
 	temporalClient client.Client,
-	paymentService service.PaymentService,
+	walletService service.WalletService,
 ) worker.Worker {
 	w := worker.New(temporalClient, temporal.TaskQueue, worker.Options{})
-	w.RegisterActivity(activity.NewPaymentServiceActivities(paymentService))
-	w.RegisterWorkflow(workflows.UserUpdatedWorkflow)
+	w.RegisterActivity(activity.NewWalletServiceActivities(walletService))
+	w.RegisterWorkflow(workflows.CreateWalletWorkflow)
 	return w
 }

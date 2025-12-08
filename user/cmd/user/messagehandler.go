@@ -13,8 +13,8 @@ import (
 	"github.com/urfave/cli/v2"
 	"golang.org/x/sync/errgroup"
 
-	"userservice/pkg/user/infrastructure/integrationevent"
-	"userservice/pkg/user/infrastructure/temporal"
+	"user/pkg/user/infrastructure/integrationevent"
+	"user/pkg/user/infrastructure/temporal"
 )
 
 type messageHandlerConfig struct {

@@ -10,8 +10,8 @@ import (
 	"gitea.xscloud.ru/xscloud/golib/pkg/infrastructure/amqp"
 	"github.com/google/uuid"
 
-	"userservice/pkg/user/domain/model"
-	"userservice/pkg/user/infrastructure/temporal"
+	"user/pkg/user/domain/model"
+	"user/pkg/user/infrastructure/temporal"
 )
 
 var errUnhandledDelivery = errors.New("unhandled delivery")

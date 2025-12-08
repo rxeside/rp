@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 
-	"userservice/pkg/user/domain/model"
+	"user/pkg/user/domain/model"
 )
 
 type RepositoryProvider interface {

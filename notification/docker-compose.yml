@@ -8,7 +8,7 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "8081:8081" # GRPC API port
+      - "8085:8081" # GRPC API port
     environment:
       NOTIFICATION_DB_HOST: notification-db
       NOTIFICATION_DB_PORT: 3306
@@ -29,7 +29,7 @@ services:
       MYSQL_PASSWORD: ${DB_PASSWORD}
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
     ports:
-      - "3306:3306"
+      - "3310:3306"
     volumes:
       - notification-db-data:/var/lib/mysql
     restart: unless-stopped

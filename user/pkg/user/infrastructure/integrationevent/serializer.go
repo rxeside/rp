@@ -6,7 +6,7 @@ import (
 	"gitea.xscloud.ru/xscloud/golib/pkg/application/outbox"
 	"github.com/pkg/errors"
 
-	"userservice/pkg/user/domain/model"
+	"user/pkg/user/domain/model"
 )
 
 func NewEventSerializer() outbox.EventSerializer[outbox.Event] {

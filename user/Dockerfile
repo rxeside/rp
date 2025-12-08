@@ -1,3 +1,3 @@
 FROM gcr.io/distroless/static-debian12
-ADD bin/userservice /app/userservice
-ENTRYPOINT ["/app/userservice"]
+ADD bin/user /app/user
+ENTRYPOINT ["/app/user"]

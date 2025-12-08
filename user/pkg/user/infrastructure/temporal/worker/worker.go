@@ -4,10 +4,10 @@ import (
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/worker"
 
-	"userservice/pkg/user/application/service"
-	"userservice/pkg/user/infrastructure/temporal"
-	"userservice/pkg/user/infrastructure/temporal/activity"
-	"userservice/pkg/user/infrastructure/temporal/workflows"
+	"user/pkg/user/application/service"
+	"user/pkg/user/infrastructure/temporal"
+	"user/pkg/user/infrastructure/temporal/activity"
+	"user/pkg/user/infrastructure/temporal/workflows"
 )
 
 func InterruptChannel() <-chan interface{} {

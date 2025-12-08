@@ -6,7 +6,7 @@ import (
 
 	"gitea.xscloud.ru/xscloud/golib/pkg/infrastructure/mysql"
 
-	"userservice/pkg/user/application/service"
+	"user/pkg/user/application/service"
 )
 
 func NewUnitOfWork(uow mysql.UnitOfWorkWithRepositoryProvider[service.RepositoryProvider]) service.UnitOfWork {

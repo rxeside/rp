@@ -7,8 +7,8 @@ import (
 
 	"github.com/google/uuid"
 
-	"userservice/pkg/common/domain"
-	"userservice/pkg/user/domain/model"
+	"user/pkg/common/domain"
+	"user/pkg/user/domain/model"
 )
 
 type UserService interface {

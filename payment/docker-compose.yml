@@ -7,7 +7,7 @@ services:
     command:
       - service
     ports:
-      - "8081:8081"
+      - "8083:8081"
     environment:
       PAYMENT_DATABASE_HOST: payment-db
       PAYMENT_DATABASE_NAME: payment_db
@@ -16,6 +16,8 @@ services:
     depends_on:
       payment-db:
         condition: service_healthy
+    networks:
+      - common-net
 
   payment-workflow-worker:
     container_name: payment-workflow-worker
@@ -30,10 +32,12 @@ services:
       PAYMENT_DATABASE_USER: payment
       PAYMENT_DATABASE_PASSWORD: 12345Q
 
-      PAYMENT_TEMPORAL_HOST: payment-temporal:7233
+      PAYMENT_TEMPORAL_HOST: temporal:7233
     depends_on:
       payment-db:
         condition: service_healthy
+    networks:
+      - common-net
 
   payment-message-handler:
     container_name: payment-message-handler
@@ -48,16 +52,16 @@ services:
       PAYMENT_DATABASE_USER: payment
       PAYMENT_DATABASE_PASSWORD: 12345Q
 
-      PAYMENT_AMQP_HOST: payment-rmq
+      PAYMENT_AMQP_HOST: rmq
       PAYMENT_AMQP_USER: guest
       PAYMENT_AMQP_PASSWORD: guest
 
-      PAYMENT_TEMPORAL_HOST: payment-temporal:7233
+      PAYMENT_TEMPORAL_HOST: temporal:7233
     depends_on:
       payment-db:
         condition: service_healthy
-      payment-rmq:
-        condition: service_healthy
+    networks:
+      - common-net
 
   payment-db:
     image: "mysql:8.3"
@@ -70,68 +74,16 @@ services:
       MYSQL_DATABASE: payment_db
       MYSQL_USER: payment
       MYSQL_PASSWORD: 12345Q
-    ports:
-      - "3306:3306"
     healthcheck:
       test: mysql -h127.0.0.1 -uroot -e 'SELECT 1'
       interval: 10s
       timeout: 30s
-
-  payment-rmq:
-    image: "rabbitmq:4.2.0-management-alpine"
-    container_name: payment-rmq
-    hostname: payment-rmq
-    ports:
-      - "15672:15672"
-    volumes:
-      - "payment-rmq-data:/var/lib/rabbitmq/mnesia"
-    healthcheck:
-      test: rabbitmq-diagnostics -q ping
-      interval: 1s
-      timeout: 3s
-      retries: 30
-
-  payment-temporal:
-    container_name: payment-temporal
-    depends_on:
-      payment-db:
-        condition: service_healthy
-    environment:
-      - DB=mysql8
-      - DB_PORT=3306
-      - MYSQL_USER=root
-      - MYSQL_SEEDS=payment-db
-      - DYNAMIC_CONFIG_FILE_PATH=config/dynamicconfig/development-sql.yaml
-      - TEMPORAL_ADDRESS=payment-temporal:7233
-      - TEMPORAL_CLI_ADDRESS=payment-temporal:7233
-    image: temporalio/auto-setup:1.29.1
-    ports:
-      - 7233:7233
-    volumes:
-      - ./docker/data/temporal/dynamicconfig:/etc/temporal/config/dynamicconfig
-
-  payment-temporal-admin-tools:
-    container_name: payment-temporal-admin-tools
-    depends_on:
-      - payment-temporal
-    environment:
-      - TEMPORAL_ADDRESS=payment-temporal:7233
-      - TEMPORAL_CLI_ADDRESS=payment-temporal:7233
-    image: temporalio/admin-tools:1.29.1-tctl-1.18.4-cli-1.5.0
-    stdin_open: true
-    tty: true
-
-  payment-temporal-ui:
-    container_name: payment-temporal-ui
-    depends_on:
-      - payment-temporal
-    environment:
-      - TEMPORAL_ADDRESS=payment-temporal:7233
-      - TEMPORAL_CORS_ORIGINS=http://localhost:3000
-    image: temporalio/ui:2.34.0
-    ports:
-      - 8080:8080
+    networks:
+      - common-net
 
 volumes:
   payment-db-data:
-  payment-rmq-data:
+
+networks:
+  common-net:
+    external: true

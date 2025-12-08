@@ -64,8 +64,16 @@ func workflowWorker(logger logging.Logger) *cli.Command {
 
 			errGroup := errgroup.Group{}
 			errGroup.Go(func() error {
-				w := worker.NewWorker(temporalClient, appservice.NewPaymentService(uow, luow, eventDispatcher))
-				return w.Run(worker.InterruptChannel())
+				w := worker.NewWorker(
+					temporalClient,
+					appservice.NewWalletService(uow, luow, eventDispatcher),
+				)
+				logger.Info("Worker created, starting...")
+				err := w.Run(worker.InterruptChannel())
+				if err != nil {
+					logger.Info("Worker creating err = ", err)
+				}
+				return err
 			})
 
 			errGroup.Go(func() error {

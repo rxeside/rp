@@ -5,8 +5,8 @@ import (
 
 	"github.com/google/uuid"
 
-	appmodel "userservice/pkg/user/application/model"
-	"userservice/pkg/user/application/service"
+	appmodel "user/pkg/user/application/model"
+	"user/pkg/user/application/service"
 )
 
 func NewUserServiceActivities(userService service.UserService) *UserServiceActivities {

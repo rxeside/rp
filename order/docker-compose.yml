@@ -7,7 +7,7 @@ services:
     command:
       - service
     ports:
-      - "8081:8081"
+      - "8084:8081"
     environment:
       ORDER_DATABASE_HOST: order-db
       ORDER_DATABASE_NAME: order_db
@@ -48,7 +48,7 @@ services:
       ORDER_DATABASE_USER: order
       ORDER_DATABASE_PASSWORD: 12345Q
 
-      ORDER_AMQP_HOST: order-rmq
+      ORDER_AMQP_HOST: rmq
       ORDER_AMQP_USER: guest
       ORDER_AMQP_PASSWORD: guest
 
@@ -71,7 +71,7 @@ services:
       MYSQL_USER: order
       MYSQL_PASSWORD: 12345Q
     ports:
-      - "3306:3306"
+      - "3309:3306"
     healthcheck:
       test: mysql -h127.0.0.1 -uroot -e 'SELECT 1'
       interval: 10s
@@ -82,7 +82,7 @@ services:
     container_name: order-rmq
     hostname: order-rmq
     ports:
-      - "15672:15672"
+      - "15676:15672"
     volumes:
       - "order-rmq-data:/var/lib/rabbitmq/mnesia"
     healthcheck:
@@ -106,7 +106,7 @@ services:
       - TEMPORAL_CLI_ADDRESS=order-temporal:7233
     image: temporalio/auto-setup:1.29.1
     ports:
-      - 7233:7233
+      - "7236:7233"
     volumes:
       - ./docker/data/temporal/dynamicconfig:/etc/temporal/config/dynamicconfig
 
@@ -130,7 +130,7 @@ services:
       - TEMPORAL_CORS_ORIGINS=http://localhost:3000
     image: temporalio/ui:2.34.0
     ports:
-      - 8080:8080
+      - "8094:8080"
 
 volumes:
   order-db-data:

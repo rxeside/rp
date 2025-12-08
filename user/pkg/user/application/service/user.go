@@ -6,10 +6,10 @@ import (
 	"gitea.xscloud.ru/xscloud/golib/pkg/application/outbox"
 	"github.com/google/uuid"
 
-	"userservice/pkg/common/domain"
-	appmodel "userservice/pkg/user/application/model"
-	"userservice/pkg/user/domain/model"
-	"userservice/pkg/user/domain/service"
+	"user/pkg/common/domain"
+	appmodel "user/pkg/user/application/model"
+	"user/pkg/user/domain/model"
+	"user/pkg/user/domain/service"
 )
 
 type UserService interface {

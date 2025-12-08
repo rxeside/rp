@@ -15,13 +15,13 @@ import (
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 
-	"userservice/api/server/userpublicapi"
-	appservice "userservice/pkg/user/application/service"
-	"userservice/pkg/user/infrastructure/integrationevent"
-	inframysql "userservice/pkg/user/infrastructure/mysql"
-	"userservice/pkg/user/infrastructure/mysql/query"
-	"userservice/pkg/user/infrastructure/transport"
-	"userservice/pkg/user/infrastructure/transport/middlewares"
+	"user/api/server/userpublicapi"
+	appservice "user/pkg/user/application/service"
+	"user/pkg/user/infrastructure/integrationevent"
+	inframysql "user/pkg/user/infrastructure/mysql"
+	"user/pkg/user/infrastructure/mysql/query"
+	"user/pkg/user/infrastructure/transport"
+	"user/pkg/user/infrastructure/transport/middlewares"
 )
 
 type serviceConfig struct {

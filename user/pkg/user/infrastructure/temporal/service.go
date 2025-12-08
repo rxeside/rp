@@ -5,8 +5,8 @@ import (
 
 	"go.temporal.io/sdk/client"
 
-	"userservice/pkg/user/domain/model"
-	"userservice/pkg/user/infrastructure/temporal/workflows"
+	"user/pkg/user/domain/model"
+	"user/pkg/user/infrastructure/temporal/workflows"
 )
 
 const TaskQueue = "userservice_task_queue"

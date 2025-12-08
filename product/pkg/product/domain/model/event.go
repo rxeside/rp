@@ -8,7 +8,7 @@ type ProductCreated struct {
 	Price     float64
 }
 
-func (e ProductCreated) EventType() string {
+func (e ProductCreated) Type() string {
 	return "ProductCreated"
 }
 
@@ -16,7 +16,7 @@ type ProductUpdated struct {
 	ProductID uuid.UUID
 }
 
-func (e ProductUpdated) EventType() string {
+func (e ProductUpdated) Type() string {
 	return "ProductUpdated"
 }
 
@@ -24,6 +24,6 @@ type ProductRemoved struct {
 	ProductID uuid.UUID
 }
 
-func (e ProductRemoved) EventType() string {
+func (e ProductRemoved) Type() string {
 	return "ProductRemoved"
 }
