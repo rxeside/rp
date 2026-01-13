@@ -14,7 +14,7 @@ const (
 	ExchangeKind     = "topic"
 	QueueName        = "order_domain_event"
 	RoutingKeyPrefix = "order."
-	ContentType      = "application/json"
+	ContentType      = "app/json"
 )
 
 func NewOutboxTransport(logger logging.Logger, producer amqp.Producer) outbox.Transport {

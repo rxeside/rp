@@ -9,7 +9,7 @@ log() {
 log "=== Stopping all services ==="
 
 #SERVICES="user order payment notification product"
-SERVICES="user payment"
+SERVICES="user payment notification"
 
 # Останавливаем микросервисы
 for svc in $SERVICES; do

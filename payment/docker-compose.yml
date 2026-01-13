@@ -19,6 +19,24 @@ services:
     networks:
       - common-net
 
+  payment-db:
+    image: "mysql:8.3"
+    container_name: payment-db
+    command: [ "--max_connections=100" ]
+    volumes:
+      - "payment-db-data:/var/lib/mysql"
+    environment:
+      MYSQL_ALLOW_EMPTY_PASSWORD: yes
+      MYSQL_DATABASE: payment_db
+      MYSQL_USER: payment
+      MYSQL_PASSWORD: 12345Q
+    healthcheck:
+      test: mysql -h127.0.0.1 -uroot -e 'SELECT 1'
+      interval: 10s
+      timeout: 30s
+    networks:
+      - common-net
+
   payment-workflow-worker:
     container_name: payment-workflow-worker
     build:
@@ -60,24 +78,6 @@ services:
     depends_on:
       payment-db:
         condition: service_healthy
-    networks:
-      - common-net
-
-  payment-db:
-    image: "mysql:8.3"
-    container_name: payment-db
-    command: [ "--max_connections=100" ]
-    volumes:
-      - "payment-db-data:/var/lib/mysql"
-    environment:
-      MYSQL_ALLOW_EMPTY_PASSWORD: yes
-      MYSQL_DATABASE: payment_db
-      MYSQL_USER: payment
-      MYSQL_PASSWORD: 12345Q
-    healthcheck:
-      test: mysql -h127.0.0.1 -uroot -e 'SELECT 1'
-      interval: 10s
-      timeout: 30s
     networks:
       - common-net
 

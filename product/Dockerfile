@@ -14,7 +14,7 @@ ADD ./data /app/data
 WORKDIR /app
 
 USER microuser
-# Run the application command by default when the container starts.
+# Run the app command by default when the container starts.
 ENTRYPOINT [ "/app/bin/product" ]
 # Pass `service` as argument to ENTRYPOINT if no argument passed on container run
 CMD ["service"]

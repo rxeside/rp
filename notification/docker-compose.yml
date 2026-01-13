@@ -1,38 +1,89 @@
-version: '3.3'
-
 services:
   notification:
-    image: notification
     container_name: notification
     build:
       context: .
       dockerfile: Dockerfile
+    command:
+      - service
     ports:
-      - "8085:8081" # GRPC API port
+      - "8084:8081"
     environment:
-      NOTIFICATION_DB_HOST: notification-db
-      NOTIFICATION_DB_PORT: 3306
-      NOTIFICATION_DB_NAME: notification
-      NOTIFICATION_DB_USER: notification
-      NOTIFICATION_DB_PASSWORD: ${DB_PASSWORD}
-      NOTIFICATION_DB_MAX_CONN: 5
+      NOTIFICATION_DATABASE_HOST: notification-db
+      NOTIFICATION_DATABASE_NAME: payment_db
+      NOTIFICATION_DATABASE_USER: notification
+      NOTIFICATION_DATABASE_PASSWORD: 12345Q
     depends_on:
-      - notification-db
-    restart: unless-stopped
+      notification-db:
+        condition: service_healthy
+    networks:
+      - common-net
 
   notification-db:
-    image: percona:8.0
+    image: "mysql:8.3"
     container_name: notification-db
-    environment:
-      MYSQL_DATABASE: notification
-      MYSQL_USER: notification
-      MYSQL_PASSWORD: ${DB_PASSWORD}
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
-    ports:
-      - "3310:3306"
+    command: [ "--max_connections=100" ]
     volumes:
-      - notification-db-data:/var/lib/mysql
-    restart: unless-stopped
+      - "notification-db-data:/var/lib/mysql"
+    environment:
+      MYSQL_ALLOW_EMPTY_PASSWORD: yes
+      MYSQL_DATABASE: payment_db
+      MYSQL_USER: notification
+      MYSQL_PASSWORD: 12345Q
+    healthcheck:
+      test: mysql -h127.0.0.1 -uroot -e 'SELECT 1'
+      interval: 10s
+      timeout: 30s
+    networks:
+      - common-net
+
+  notification-workflow-worker:
+    container_name: notification-workflow-worker
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command:
+      - workflow-worker
+    environment:
+      NOTIFICATION_DATABASE_HOST: notification-db
+      NOTIFICATION_DATABASE_NAME: payment_db
+      NOTIFICATION_DATABASE_USER: notification
+      NOTIFICATION_DATABASE_PASSWORD: 12345Q
+
+      NOTIFICATION_TEMPORAL_HOST: temporal:7233
+    depends_on:
+      notification-db:
+        condition: service_healthy
+    networks:
+      - common-net
+
+  notification-message-handler:
+    container_name: notification-message-handler
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command:
+      - message-handler
+    environment:
+      NOTIFICATION_DATABASE_HOST: notification-db
+      NOTIFICATION_DATABASE_NAME: payment_db
+      NOTIFICATION_DATABASE_USER: notification
+      NOTIFICATION_DATABASE_PASSWORD: 12345Q
+
+      NOTIFICATION_AMQP_HOST: rmq
+      NOTIFICATION_AMQP_USER: guest
+      NOTIFICATION_AMQP_PASSWORD: guest
+
+      NOTIFICATION_TEMPORAL_HOST: temporal:7233
+    depends_on:
+      notification-db:
+        condition: service_healthy
+    networks:
+      - common-net
 
 volumes:
   notification-db-data:
+
+networks:
+  common-net:
+    external: true

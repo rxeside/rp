@@ -16,7 +16,7 @@ import (
 	"google.golang.org/grpc"
 
 	"user/api/server/userpublicapi"
-	appservice "user/pkg/user/application/service"
+	appservice "user/pkg/user/app/service"
 	"user/pkg/user/infrastructure/integrationevent"
 	inframysql "user/pkg/user/infrastructure/mysql"
 	"user/pkg/user/infrastructure/mysql/query"
@@ -81,6 +81,7 @@ func service(logger logging.Logger) *cli.Command {
 			errGroup.Go(func() error {
 				router := mux.NewRouter()
 				registerHealthcheck(router)
+				registerMetrics(router)
 				// nolint:gosec
 				server := http.Server{
 					Addr:    cnf.Service.HTTPAddress,

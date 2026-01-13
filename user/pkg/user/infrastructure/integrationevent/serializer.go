@@ -30,7 +30,7 @@ func (s eventSerializer) Serialize(event outbox.Event) (string, error) {
 	case *model.UserUpdated:
 		ie := UserUpdated{
 			UserID:    e.UserID.String(),
-			UpdatedAt: e.UpdatedAt.Unix(),
+			UpdatedAt: e.UpdatedAt,
 		}
 		if e.UpdatedFields != nil {
 			ie.UpdatedFields = &struct {
@@ -58,7 +58,7 @@ func (s eventSerializer) Serialize(event outbox.Event) (string, error) {
 		b, err := json.Marshal(UserDeleted{
 			UserID:    e.UserID.String(),
 			Status:    int(e.Status),
-			DeletedAt: e.DeletedAt.Unix(),
+			DeletedAt: e.DeletedAt,
 			Hard:      e.Hard,
 		})
 		return string(b), errors.WithStack(err)

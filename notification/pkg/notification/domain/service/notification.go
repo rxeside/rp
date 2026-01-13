@@ -1,122 +1,66 @@
 package service
 
 import (
-	"errors"
 	"time"
 
 	"github.com/google/uuid"
 
-	commonevent "notification/pkg/common/event"
 	"notification/pkg/notification/domain/model"
 )
 
-var (
-	ErrNotificationNotFound      = errors.New("notification not found")
-	ErrInvalidNotificationStatus = errors.New("invalid notification status")
-)
-
 type NotificationService interface {
-	CreateNotification(userID, orderID uuid.UUID, message string) (uuid.UUID, error)
-	RemoveNotification(notificationID uuid.UUID) error
-	SetStatus(notificationID uuid.UUID, status string) error
+	CreateNotification(payload model.NotificationPayload) (uuid.UUID, error)
+	MarkAsExecuted(id uuid.UUID, success bool) error
 }
 
-func NewNotificationService(repo model.NotificationRepository, dispatcher commonevent.Dispatcher) NotificationService {
+func NewNotificationService(repo model.NotificationRepository) NotificationService {
 	return &notificationService{
-		repo:       repo,
-		dispatcher: dispatcher,
+		repo: repo,
 	}
 }
 
 type notificationService struct {
-	repo       model.NotificationRepository
-	dispatcher commonevent.Dispatcher
+	repo model.NotificationRepository
 }
 
-func (n *notificationService) CreateNotification(userID, orderID uuid.UUID, message string) (uuid.UUID, error) {
-	notificationID, err := n.repo.NextID()
+func (s *notificationService) CreateNotification(payload model.NotificationPayload) (uuid.UUID, error) {
+	id, err := s.repo.NextID()
 	if err != nil {
 		return uuid.Nil, err
-	}
-
-	currentTime := time.Now()
-	err = n.repo.Store(&model.Notification{
-		ID:        notificationID,
-		UserID:    userID,
-		OrderID:   orderID,
-		Status:    "pending",
-		Message:   message,
-		CreatedAt: currentTime,
-		UpdatedAt: currentTime,
-	})
-	if err != nil {
-		return uuid.Nil, err
-	}
-
-	return notificationID, n.dispatcher.Dispatch(model.NotificationCreated{
-		NotificationID: notificationID,
-		UserID:         userID,
-		OrderID:        orderID,
-		Status:         "pending",
-		Message:        message,
-	})
-}
-
-func (n *notificationService) RemoveNotification(notificationID uuid.UUID) error {
-	notification, err := n.repo.Find(notificationID)
-	if err != nil {
-		if errors.Is(err, ErrNotificationNotFound) {
-			return nil
-		}
-		return err
 	}
 
 	now := time.Now()
-	notification.DeletedAt = &now
-	notification.UpdatedAt = now
-
-	if err = n.repo.Store(notification); err != nil {
-		return err
+	notif := model.Notification{
+		ID:        id,
+		Payload:   payload,
+		CreatedAt: now,
+		UpdatedAt: now,
 	}
 
-	return n.dispatcher.Dispatch(model.NotificationRemoved{
-		NotificationID: notificationID,
-	})
+	if err := s.repo.Store(notif); err != nil {
+		return uuid.Nil, err
+	}
+
+	return id, nil
 }
 
-func (n *notificationService) SetStatus(notificationID uuid.UUID, status string) error {
-	notification, err := n.repo.Find(notificationID)
+func (s *notificationService) MarkAsExecuted(id uuid.UUID, success bool) error {
+	notif, err := s.repo.Find(id)
 	if err != nil {
 		return err
 	}
 
-	oldStatus := notification.Status
-
-	if !n.isValidStatusTransition(oldStatus, status) {
-		return ErrInvalidNotificationStatus
+	executedAt := time.Now()
+	var status model.NotificationStatus
+	if success {
+		status = model.StatusSuccess
+	} else {
+		status = model.StatusFailed
 	}
 
-	notification.Status = status
-	notification.UpdatedAt = time.Now()
+	notif.ExecutedAt = &executedAt
+	notif.Status = &status
+	notif.UpdatedAt = executedAt
 
-	if err = n.repo.Store(notification); err != nil {
-		return err
-	}
-
-	return n.dispatcher.Dispatch(model.NotificationStatusChanged{
-		NotificationID: notificationID,
-		From:           oldStatus,
-		To:             status,
-	})
-}
-
-func (n *notificationService) isValidStatusTransition(from, to string) bool {
-	switch from {
-	case "pending":
-		return to == "sent" || to == "failed" || to == "cancelled"
-	case "sent", "failed", "cancelled":
-		return false
-	default:
-		return false
-	}
+	return s.repo.Store(*notif)
 }

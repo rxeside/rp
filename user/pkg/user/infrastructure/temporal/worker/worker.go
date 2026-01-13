@@ -4,7 +4,7 @@ import (
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/worker"
 
-	"user/pkg/user/application/service"
+	"user/pkg/user/app/service"
 	"user/pkg/user/infrastructure/temporal"
 	"user/pkg/user/infrastructure/temporal/activity"
 	"user/pkg/user/infrastructure/temporal/workflows"

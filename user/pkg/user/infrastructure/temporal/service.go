@@ -2,6 +2,7 @@ package temporal
 
 import (
 	"context"
+	"fmt"
 
 	"go.temporal.io/sdk/client"
 
@@ -26,6 +27,7 @@ type workflowService struct {
 }
 
 func (s *workflowService) RunUserUpdatedWorkflow(ctx context.Context, id string, event model.UserUpdated) error {
+	fmt.Println("RunUserUpdatedWorkflow event = ", event)
 	_, err := s.temporalClient.ExecuteWorkflow(
 		ctx,
 		client.StartWorkflowOptions{

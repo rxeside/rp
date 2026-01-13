@@ -14,7 +14,7 @@ const (
 	ExchangeKind     = "topic"
 	QueueName        = "payment_domain_event"
 	RoutingKeyPrefix = "payment."
-	ContentType      = "application/json"
+	ContentType      = "app/json"
 )
 
 func NewOutboxTransport(logger logging.Logger, producer amqp.Producer) outbox.Transport {

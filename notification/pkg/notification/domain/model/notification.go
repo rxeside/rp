@@ -1,27 +1,39 @@
 package model
 
 import (
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
 )
 
-type Notification struct {
-	ID        uuid.UUID
-	UserID    uuid.UUID
-	OrderID   uuid.UUID
-	Status    string
-	Message   string
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	DeletedAt *time.Time
+var (
+	ErrNotificationNotFound = errors.New("notification not found")
+)
+
+type NotificationStatus string
+
+const (
+	StatusSuccess NotificationStatus = "success"
+	StatusFailed  NotificationStatus = "failed"
+)
+
+type NotificationPayload struct {
+	Email   string
+	Message string
 }
 
-// Простой нотификейшен, но с копией юзера
+type Notification struct {
+	ID         uuid.UUID
+	Payload    NotificationPayload
+	ExecutedAt *time.Time
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
+	Status     *NotificationStatus
+}
 
 type NotificationRepository interface {
 	NextID() (uuid.UUID, error)
-	Store(notification *Notification) error
+	Store(notification Notification) error
 	Find(id uuid.UUID) (*Notification, error)
-	Remove(id uuid.UUID) error
 }

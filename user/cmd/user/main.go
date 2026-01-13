@@ -32,7 +32,7 @@ func main() {
 
 	err := app.RunContext(ctx, os.Args)
 	if err != nil {
-		logger.FatalError(err, "application stopped with error")
+		logger.FatalError(err, "app stopped with error")
 	}
 }
 

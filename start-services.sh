@@ -45,7 +45,8 @@ done
 log "Temporal is ready"
 
 # Запускаем микросервисы
-SERVICES="user payment"
+#SERVICES="user payment notification"
+SERVICES="user"
 
 for svc in $SERVICES; do
     log "=== Starting service: $svc ==="
@@ -68,3 +69,4 @@ done
 log "=== All services are running! ==="
 log "RabbitMQ UI: http://localhost:15672"
 log "Temporal UI: http://localhost:8090"
+log "Prometheus: http://localhost:8082/metrics"

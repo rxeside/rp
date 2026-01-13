@@ -12,7 +12,7 @@ import (
 	"github.com/urfave/cli/v2"
 	"golang.org/x/sync/errgroup"
 
-	appservice "user/pkg/user/application/service"
+	appservice "user/pkg/user/app/service"
 	"user/pkg/user/infrastructure/integrationevent"
 	inframysql "user/pkg/user/infrastructure/mysql"
 	"user/pkg/user/infrastructure/temporal"
@@ -76,6 +76,7 @@ func workflowWorker(logger logging.Logger) *cli.Command {
 			errGroup.Go(func() error {
 				router := mux.NewRouter()
 				registerHealthcheck(router)
+				registerMetrics(router)
 				// nolint:gosec
 				server := http.Server{
 					Addr:    cnf.Service.HTTPAddress,

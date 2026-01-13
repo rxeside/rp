@@ -8,7 +8,6 @@ import (
 
 	"gitea.xscloud.ru/xscloud/golib/pkg/application/logging"
 	"gitea.xscloud.ru/xscloud/golib/pkg/infrastructure/amqp"
-	"github.com/google/uuid"
 
 	"user/pkg/user/domain/model"
 	"user/pkg/user/infrastructure/temporal"
@@ -33,45 +32,39 @@ type amqpTransport struct {
 }
 
 func (t *amqpTransport) Handler() amqp.Handler {
-	return t.withLog(t.handle)
-}
+	return t.withLog(func(_ context.Context, delivery amqp.Delivery) error {
+		switch delivery.Type {
+		case model.UserCreated{}.Type():
+			var e model.UserCreated
+			err := json.Unmarshal(delivery.Body, &e)
+			if err != nil {
+				return err
+			}
+			t.logger.Info("received user_created event", "payload", e)
+			return nil
 
-func (t *amqpTransport) handle(ctx context.Context, delivery amqp.Delivery) error {
-	switch delivery.Type {
-	case model.UserUpdated{}.Type():
-		var e UserUpdated
-		err := json.Unmarshal(delivery.Body, &e)
-		if err != nil {
-			return err
-		}
-		de := model.UserUpdated{
-			UserID:    uuid.MustParse(e.UserID),
-			UpdatedAt: time.Unix(e.UpdatedAt, 0),
-		}
-		if e.UpdatedFields != nil {
-			de.UpdatedFields = &struct {
-				Status   *model.UserStatus
-				Email    *string
-				Telegram *string
-			}{
-				Status:   (*model.UserStatus)(e.UpdatedFields.Status),
-				Email:    e.UpdatedFields.Email,
-				Telegram: e.UpdatedFields.Telegram,
+		case model.UserUpdated{}.Type():
+			var e model.UserUpdated
+			err := json.Unmarshal(delivery.Body, &e)
+			if err != nil {
+				return err
 			}
-		}
-		if e.RemovedFields != nil {
-			de.RemovedFields = &struct {
-				Email    *bool
-				Telegram *bool
-			}{
-				Email:    e.RemovedFields.Email,
-				Telegram: e.RemovedFields.Telegram,
+			t.logger.Info("received user_updated event", "payload", e)
+			return nil // ← ТОЛЬКО ЛОГИРОВАНИЕ!
+
+		case model.UserDeleted{}.Type():
+			var e model.UserDeleted
+			err := json.Unmarshal(delivery.Body, &e)
+			if err != nil {
+				return err
 			}
+			t.logger.Info("received user_deleted event", "payload", e)
+			return nil
+
+		default:
+			return errUnhandledDelivery
 		}
-		return t.workflowService.RunUserUpdatedWorkflow(ctx, delivery.CorrelationID, de)
-	default:
-		return errUnhandledDelivery
-	}
+	})
 }
 
 func (t *amqpTransport) withLog(handler amqp.Handler) amqp.Handler {

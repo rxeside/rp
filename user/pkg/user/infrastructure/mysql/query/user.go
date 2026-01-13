@@ -8,8 +8,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
-	appmodel "user/pkg/user/application/model"
-	"user/pkg/user/application/query"
+	appmodel "user/pkg/user/app/data"
+	"user/pkg/user/app/query"
 	"user/pkg/user/domain/model"
 )
 

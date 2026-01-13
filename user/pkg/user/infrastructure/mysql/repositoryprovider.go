@@ -5,7 +5,7 @@ import (
 
 	"gitea.xscloud.ru/xscloud/golib/pkg/infrastructure/mysql"
 
-	"user/pkg/user/application/service"
+	"user/pkg/user/app/service"
 	"user/pkg/user/domain/model"
 	"user/pkg/user/infrastructure/mysql/repository"
 )
