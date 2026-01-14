@@ -1,0 +1,130 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification
+spec:
+  ports:
+    - name: grpc
+      port: 8081
+      targetPort: 8081
+    - name: http
+      port: 8082
+      targetPort: 8082
+  selector:
+    app: notification
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notification
+  template:
+    metadata:
+      labels:
+        app: notification
+    spec:
+      initContainers:
+        - name: notification-migrator
+          image: notification:latest
+          imagePullPolicy: Never
+          command: ["/app/notification", "migrate", "database"]
+          env:
+            - name: NOTIFICATION_DATABASE_HOST
+              value: mysql.infrastructure.svc.cluster.local:3306
+            - name: NOTIFICATION_DATABASE_NAME
+              value: payment_db
+            - name: NOTIFICATION_DATABASE_USER
+              value: notification
+            - name: NOTIFICATION_DATABASE_PASSWORD
+              value: 12345Q
+      containers:
+        - name: notification
+          image: notification:latest
+          imagePullPolicy: Never
+          command: ["/app/notification", "service"]
+          ports:
+            - containerPort: 8081
+              name: grpc
+            - containerPort: 8082
+              name: http
+          env:
+            - name: NOTIFICATION_DATABASE_HOST
+              value: mysql.infrastructure.svc.cluster.local:3306
+            - name: NOTIFICATION_DATABASE_NAME
+              value: payment_db
+            - name: NOTIFICATION_DATABASE_USER
+              value: notification
+            - name: NOTIFICATION_DATABASE_PASSWORD
+              value: 12345Q
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notification-worker
+  template:
+    metadata:
+      labels:
+        app: notification-worker
+    spec:
+      containers:
+        - name: notification-worker
+          image: notification:latest
+          imagePullPolicy: Never
+          command: ["/app/notification", "workflow-worker"]
+          env:
+            - name: NOTIFICATION_DATABASE_HOST
+              value: mysql.infrastructure.svc.cluster.local:3306
+            - name: NOTIFICATION_DATABASE_NAME
+              value: payment_db
+            - name: NOTIFICATION_DATABASE_USER
+              value: notification
+            - name: NOTIFICATION_DATABASE_PASSWORD
+              value: 12345Q
+            - name: NOTIFICATION_TEMPORAL_HOST
+              value: temporal.infrastructure.svc.cluster.local:7233
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-handler
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notification-handler
+  template:
+    metadata:
+      labels:
+        app: notification-handler
+    spec:
+      containers:
+        - name: notification-handler
+          image: notification:latest
+          imagePullPolicy: Never
+          command: ["/app/notification", "message-handler"]
+          env:
+            - name: NOTIFICATION_DATABASE_HOST
+              value: mysql.infrastructure.svc.cluster.local:3306
+            - name: NOTIFICATION_DATABASE_NAME
+              value: payment_db
+            - name: NOTIFICATION_DATABASE_USER
+              value: notification
+            - name: NOTIFICATION_DATABASE_PASSWORD
+              value: 12345Q
+            - name: NOTIFICATION_TEMPORAL_HOST
+              value: temporal.infrastructure.svc.cluster.local:7233
+            - name: NOTIFICATION_AMQP_HOST
+              value: rabbitmq.infrastructure.svc.cluster.local:5672
+            - name: NOTIFICATION_AMQP_USER
+              value: guest
+            - name: NOTIFICATION_AMQP_PASSWORD
+              value: guest

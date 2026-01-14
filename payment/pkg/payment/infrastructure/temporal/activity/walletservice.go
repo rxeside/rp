@@ -23,3 +23,13 @@ func (a *WalletServiceActivities) CreateWallet(ctx context.Context, userID uuid.
 	fmt.Println("CreateWallet userID = ", userID)
 	return a.walletService.CreateWallet(ctx, userID)
 }
+
+func (a *WalletServiceActivities) ChargeWallet(ctx context.Context, userIDStr string, amount float64) error {
+	uid, _ := uuid.Parse(userIDStr)
+	return a.walletService.UpdateWalletBalance(ctx, uid, -amount)
+}
+
+func (a *WalletServiceActivities) RefundWallet(ctx context.Context, userIDStr string, amount float64) error {
+	uid, _ := uuid.Parse(userIDStr)
+	return a.walletService.UpdateWalletBalance(ctx, uid, amount)
+}

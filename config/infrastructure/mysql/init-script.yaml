@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql-init-scripts
+data:
+  01-create-databases.sh: |
+    #!/bin/bash
+    set -e
+    
+    echo "Running custom initialization script..."
+    
+    if [ -d "/secrets" ]; then
+      for secret_file in /secrets/*; do
+        [ -f "$secret_file" ] || continue
+    
+        val=$(cat "$secret_file")
+        IFS='|' read -r db_name db_user db_pass <<< "$val"
+    
+        echo "Creating DB: $db_name for User: $db_user"
+    
+        mysql -u root -p"$MYSQL_ROOT_PASSWORD" <<-EOSQL
+          CREATE DATABASE IF NOT EXISTS \`$db_name\`;
+          CREATE USER IF NOT EXISTS '$db_user'@'%' IDENTIFIED BY '$db_pass';
+          GRANT ALL PRIVILEGES ON \`$db_name\`.* TO '$db_user'@'%';
+          FLUSH PRIVILEGES;
+    EOSQL
+      done
+    else
+      echo "No secrets directory found!"
+    fi
+    echo "Initialization finished."

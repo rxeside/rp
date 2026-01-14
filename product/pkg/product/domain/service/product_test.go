@@ -42,6 +42,16 @@ func (m *MockProductRepository) Remove(id uuid.UUID) error {
 	return args.Error(0)
 }
 
+func (m *MockProductRepository) ReserveStock(id uuid.UUID, quantity int) error {
+	args := m.Called(id, quantity)
+	return args.Error(0)
+}
+
+func (m *MockProductRepository) ReleaseStock(id uuid.UUID, quantity int) error {
+	args := m.Called(id, quantity)
+	return args.Error(0)
+}
+
 type MockEventDispatcher struct {
 	mock.Mock
 }

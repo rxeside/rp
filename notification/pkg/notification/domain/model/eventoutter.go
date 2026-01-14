@@ -44,6 +44,16 @@ type UserDeleted struct {
 	Hard      bool
 }
 
+type OrderStatusChanged struct {
+	OrderID uuid.UUID `json:"orderID"`
+	From    int       `json:"from"`
+	To      int       `json:"to"`
+}
+
+func (e OrderStatusChanged) Type() string {
+	return "OrderStatusChanged"
+}
+
 func (u UserDeleted) Type() string {
 	return "user_deleted"
 }

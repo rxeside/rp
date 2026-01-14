@@ -1,0 +1,130 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: order
+spec:
+  ports:
+    - name: grpc
+      port: 8081
+      targetPort: 8081
+    - name: http
+      port: 8082
+      targetPort: 8082
+  selector:
+    app: order
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: order
+  template:
+    metadata:
+      labels:
+        app: order
+    spec:
+      initContainers:
+        - name: order-migrator
+          image: order:latest
+          imagePullPolicy: Never
+          command: ["/app/order", "migrate", "database"]
+          env:
+            - name: ORDER_DATABASE_HOST
+              value: mysql.infrastructure.svc.cluster.local:3306
+            - name: ORDER_DATABASE_NAME
+              value: order_db
+            - name: ORDER_DATABASE_USER
+              value: order
+            - name: ORDER_DATABASE_PASSWORD
+              value: 12345Q
+      containers:
+        - name: order
+          image: order:latest
+          imagePullPolicy: Never
+          command: ["/app/order", "service"]
+          ports:
+            - containerPort: 8081
+              name: grpc
+            - containerPort: 8082
+              name: http
+          env:
+            - name: ORDER_DATABASE_HOST
+              value: mysql.infrastructure.svc.cluster.local:3306
+            - name: ORDER_DATABASE_NAME
+              value: order_db
+            - name: ORDER_DATABASE_USER
+              value: order
+            - name: ORDER_DATABASE_PASSWORD
+              value: 12345Q
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: order-worker
+  template:
+    metadata:
+      labels:
+        app: order-worker
+    spec:
+      containers:
+        - name: order-worker
+          image: order:latest
+          imagePullPolicy: Never
+          command: ["/app/order", "workflow-worker"]
+          env:
+            - name: ORDER_DATABASE_HOST
+              value: mysql.infrastructure.svc.cluster.local:3306
+            - name: ORDER_DATABASE_NAME
+              value: order_db
+            - name: ORDER_DATABASE_USER
+              value: order
+            - name: ORDER_DATABASE_PASSWORD
+              value: 12345Q
+            - name: ORDER_TEMPORAL_HOST
+              value: temporal.infrastructure.svc.cluster.local:7233
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-handler
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: order-handler
+  template:
+    metadata:
+      labels:
+        app: order-handler
+    spec:
+      containers:
+        - name: order-handler
+          image: order:latest
+          imagePullPolicy: Never
+          command: ["/app/order", "message-handler"]
+          env:
+            - name: ORDER_DATABASE_HOST
+              value: mysql.infrastructure.svc.cluster.local:3306
+            - name: ORDER_DATABASE_NAME
+              value: order_db
+            - name: ORDER_DATABASE_USER
+              value: order
+            - name: ORDER_DATABASE_PASSWORD
+              value: 12345Q
+            - name: ORDER_TEMPORAL_HOST
+              value: temporal.infrastructure.svc.cluster.local:7233
+            - name: ORDER_AMQP_HOST
+              value: rabbitmq.infrastructure.svc.cluster.local:5672
+            - name: ORDER_AMQP_USER
+              value: guest
+            - name: ORDER_AMQP_PASSWORD
+              value: guest

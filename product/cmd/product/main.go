@@ -56,6 +56,7 @@ func runApp(
 		Commands: []*cli.Command{
 			service(config, logger, closer),
 			migrate(config, logger),
+			runWorker(config),
 		},
 	}
 

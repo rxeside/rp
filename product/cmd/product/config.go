@@ -29,6 +29,8 @@ type config struct {
 	DBMaxConn  int    `envconfig:"db_max_conn"`
 
 	TestGRPCAddress string `envconfig:"test_grpc_address" default:"test:8081"`
+
+	TemporalHost string `envconfig:"temporal_host" default:"temporal:7233"`
 }
 
 func (c *config) buildDSN() string {

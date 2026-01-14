@@ -1,0 +1,7 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - mysql.yaml
+  - secret.yaml
+  - init-db-secret.yaml
+  - init-script.yaml

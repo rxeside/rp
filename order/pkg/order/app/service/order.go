@@ -64,6 +64,11 @@ func (s *orderService) StoreOrder(ctx context.Context, order appdata.Order) (uui
 
 		return nil
 	})
+	if order.Status == appdata.Open {
+		go func() {
+			// s.temporalClient.ExecuteWorkflow(..., workflows.CreateOrderSaga, params)
+		}()
+	}
 	return orderID, err
 }
 

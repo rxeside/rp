@@ -16,6 +16,8 @@ import (
 
 var errUnhandledDelivery = errors.New("unhandled delivery")
 
+const OrderStatusChangedType = "OrderStatusChanged"
+
 func NewAMQPTransport(logger logging.Logger, workflowService temporal.WorkflowService) AMQPTransport {
 	return &amqpTransport{
 		logger:          logger,
@@ -46,6 +48,21 @@ func (t *amqpTransport) handle(ctx context.Context, delivery amqp.Delivery) erro
 		}
 		fmt.Println("event = ", e)
 		return t.workflowService.RunCreateUserWorkflow(ctx, delivery.CorrelationID, e)
+
+	case OrderStatusChangedType:
+		var e model.OrderStatusChanged
+		err := json.Unmarshal(delivery.Body, &e)
+		if err != nil {
+			t.logger.Error(err, "failed to unmarshal OrderStatusChanged")
+			return nil
+		}
+
+		// Логика обработки уведомления
+		// t.notificationService.NotifyOrderStatus(ctx, e.OrderID, e.To)
+
+		fmt.Printf("NOTIFICATION SERVICE: Received Order %s status change to %d\n", e.OrderID, e.To)
+		return nil
+
 	default:
 		return errUnhandledDelivery
 	}

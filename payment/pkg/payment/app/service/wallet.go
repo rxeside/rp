@@ -17,6 +17,7 @@ type WalletService interface {
 	RemoveWallet(ctx context.Context, walletID uuid.UUID) error
 	UpdateWalletBalance(ctx context.Context, walletID uuid.UUID, newBalance float64) error
 	FindWallet(ctx context.Context, walletID uuid.UUID) (data.Wallet, error)
+	Charge(ctx context.Context, userID uuid.UUID, amount float64) error
 }
 
 func NewWalletService(
@@ -91,6 +92,12 @@ func (s *walletService) domainEventDispatcher(ctx context.Context) commonevent.D
 		ctx:             ctx,
 		eventDispatcher: s.eventDispatcher,
 	}
+}
+
+func (s *walletService) Charge(ctx context.Context, userID uuid.UUID, _ float64) error {
+	return s.luow.Execute(ctx, []string{walletLockByUser(userID)}, func(_ RepositoryProvider) error {
+		return nil
+	})
 }
 
 const baseWalletLock = "wallet_"

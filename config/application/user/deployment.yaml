@@ -1,0 +1,130 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: user
+spec:
+  ports:
+    - name: grpc
+      port: 8081
+      targetPort: 8081
+    - name: http
+      port: 8082
+      targetPort: 8082
+  selector:
+    app: user
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: user
+  template:
+    metadata:
+      labels:
+        app: user
+    spec:
+      initContainers:
+        - name: user-migrator
+          image: user:latest
+          imagePullPolicy: Never
+          command: ["/app/user", "migrate", "database"]
+          env:
+            - name: USER_DATABASE_HOST
+              value: mysql.infrastructure.svc.cluster.local:3306
+            - name: USER_DATABASE_NAME
+              value: user_db
+            - name: USER_DATABASE_USER
+              value: user
+            - name: USER_DATABASE_PASSWORD
+              value: 12345Q
+      containers:
+        - name: user
+          image: user:latest
+          imagePullPolicy: Never
+          command: ["/app/user", "service"]
+          ports:
+            - containerPort: 8081
+              name: grpc
+            - containerPort: 8082
+              name: http
+          env:
+            - name: USER_DATABASE_HOST
+              value: mysql.infrastructure.svc.cluster.local:3306
+            - name: USER_DATABASE_NAME
+              value: user_db
+            - name: USER_DATABASE_USER
+              value: user
+            - name: USER_DATABASE_PASSWORD
+              value: 12345Q
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: user-worker
+  template:
+    metadata:
+      labels:
+        app: user-worker
+    spec:
+      containers:
+        - name: user-worker
+          image: user:latest
+          imagePullPolicy: Never
+          command: ["/app/user", "workflow-worker"]
+          env:
+            - name: USER_DATABASE_HOST
+              value: mysql.infrastructure.svc.cluster.local:3306
+            - name: USER_DATABASE_NAME
+              value: user_db
+            - name: USER_DATABASE_USER
+              value: user
+            - name: USER_DATABASE_PASSWORD
+              value: 12345Q
+            - name: USER_TEMPORAL_HOST
+              value: temporal.infrastructure.svc.cluster.local:7233
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-handler
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: user-handler
+  template:
+    metadata:
+      labels:
+        app: user-handler
+    spec:
+      containers:
+        - name: user-handler
+          image: user:latest
+          imagePullPolicy: Never
+          command: ["/app/user", "message-handler"]
+          env:
+            - name: USER_DATABASE_HOST
+              value: mysql.infrastructure.svc.cluster.local:3306
+            - name: USER_DATABASE_NAME
+              value: user_db
+            - name: USER_DATABASE_USER
+              value: user
+            - name: USER_DATABASE_PASSWORD
+              value: 12345Q
+            - name: USER_TEMPORAL_HOST
+              value: temporal.infrastructure.svc.cluster.local:7233
+            - name: USER_AMQP_HOST
+              value: rabbitmq.infrastructure.svc.cluster.local:5672
+            - name: USER_AMQP_USER
+              value: guest
+            - name: USER_AMQP_PASSWORD
+              value: guest

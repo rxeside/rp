@@ -1,0 +1,10 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: application
+resources:
+  - namespace.yaml
+  - user/deployment.yaml
+  - payment/deployment.yaml
+  - order/deployment.yaml
+  - notification/deployment.yaml
+  - product/deployment.yaml
