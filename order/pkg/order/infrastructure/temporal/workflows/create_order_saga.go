@@ -45,11 +45,11 @@ func CreateOrderSaga(ctx workflow.Context, params OrderSagaParams) error {
 	}
 
 	defer func() {
-		// Логика компенсаций реализуется через проверку ошибок на этапах ниже
+		// kompensacii nije
 	}()
 
 	ctxPayment := workflow.WithActivityOptions(ctx, workflow.ActivityOptions{
-		TaskQueue:           "payment-task-queue",
+		TaskQueue:           "payment_task_queue",
 		StartToCloseTimeout: time.Minute,
 	})
 

@@ -37,7 +37,7 @@ func (o *orderQueryService) FindUser(ctx context.Context, orderID uuid.UUID) (*d
 	err := o.client.GetContext(
 		ctx,
 		&orderRow,
-		`SELECT order_id, customer_id, status, created_at, updated_at, deleted_at FROM order WHERE order_id = ?`,
+		`SELECT order_id, customer_id, status, created_at, updated_at, deleted_at FROM orders WHERE order_id = ?`,
 		orderID,
 	)
 	if err != nil {
@@ -74,7 +74,7 @@ func (o *orderQueryService) loadOrderItems(ctx context.Context, orderID uuid.UUI
 	err := o.client.SelectContext(
 		ctx,
 		&itemRows,
-		`SELECT order_id, product_id, count, total_price FROM order_item WHERE order_id = ?`,
+		`SELECT order_id, product_id, count, total_price FROM order_items WHERE order_id = ?`,
 		orderID,
 	)
 	if err != nil {

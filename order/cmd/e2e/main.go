@@ -51,10 +51,10 @@ func main() {
 	fmt.Printf("Order Created with ID: %s\n", orderID)
 
 	fmt.Println("--- Polling Order Status ---")
-	for i := 0; i < 20; i++ {
+	for i := 0; i < 30; i++ {
 		r, err := client.FindOrder(ctx, &pb.FindOrderRequest{OrderID: orderID})
 		if err != nil {
-			log.Printf("Getting order error: %v", err)
+			log.Printf("Waiting for order... (%v)", err)
 		} else {
 			fmt.Printf("Attempt %d: Status = %s\n", i+1, r.Status)
 

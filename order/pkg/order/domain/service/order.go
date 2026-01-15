@@ -173,7 +173,7 @@ func (o orderService) RemoveItem(orderID, itemID uuid.UUID) error {
 func (o orderService) isValidStatusTransition(from, to model.OrderStatus) bool {
 	switch from {
 	case model.Open:
-		return to == model.Pending || to == model.Cancelled
+		return to == model.Open || to == model.Pending || to == model.Paid || to == model.Cancelled
 	case model.Pending:
 		return to == model.Paid || to == model.Cancelled
 	case model.Paid, model.Cancelled:

@@ -36,7 +36,7 @@ spec:
             - name: NOTIFICATION_DATABASE_HOST
               value: mysql.infrastructure.svc.cluster.local:3306
             - name: NOTIFICATION_DATABASE_NAME
-              value: payment_db
+              value: notification_db
             - name: NOTIFICATION_DATABASE_USER
               value: notification
             - name: NOTIFICATION_DATABASE_PASSWORD
@@ -55,7 +55,7 @@ spec:
             - name: NOTIFICATION_DATABASE_HOST
               value: mysql.infrastructure.svc.cluster.local:3306
             - name: NOTIFICATION_DATABASE_NAME
-              value: payment_db
+              value: notification_db
             - name: NOTIFICATION_DATABASE_USER
               value: notification
             - name: NOTIFICATION_DATABASE_PASSWORD
@@ -84,7 +84,7 @@ spec:
             - name: NOTIFICATION_DATABASE_HOST
               value: mysql.infrastructure.svc.cluster.local:3306
             - name: NOTIFICATION_DATABASE_NAME
-              value: payment_db
+              value: notification_db
             - name: NOTIFICATION_DATABASE_USER
               value: notification
             - name: NOTIFICATION_DATABASE_PASSWORD
@@ -115,7 +115,7 @@ spec:
             - name: NOTIFICATION_DATABASE_HOST
               value: mysql.infrastructure.svc.cluster.local:3306
             - name: NOTIFICATION_DATABASE_NAME
-              value: payment_db
+              value: notification_db
             - name: NOTIFICATION_DATABASE_USER
               value: notification
             - name: NOTIFICATION_DATABASE_PASSWORD
