@@ -31,43 +31,48 @@ func CreateOrderSaga(ctx workflow.Context, params OrderSagaParams) error {
 	logger := workflow.GetLogger(ctx)
 	logger.Info("Starting Order Saga", "OrderID", params.OrderID)
 
+	// 1. Reserve Products
 	for _, item := range params.Items {
 		ctxProduct := workflow.WithActivityOptions(ctx, workflow.ActivityOptions{
 			TaskQueue:           "product-task-queue",
 			StartToCloseTimeout: time.Minute,
 		})
 
-		err := workflow.ExecuteActivity(ctxProduct, "ProductActivities_ReserveProduct", item.ProductID, item.Quantity).Get(ctx, nil)
+		// CALL BY EXPLICIT STRING NAME "ReserveProduct"
+		err := workflow.ExecuteActivity(ctxProduct, "ReserveProduct", item.ProductID, item.Quantity).Get(ctx, nil)
 		if err != nil {
 			logger.Error("Failed to reserve product", "Error", err)
 			return setOrderStatus(ctx, params.OrderID, "Cancelled")
 		}
 	}
 
-	defer func() {
-		// kompensacii nije
-	}()
-
+	// 2. Charge Wallet
 	ctxPayment := workflow.WithActivityOptions(ctx, workflow.ActivityOptions{
 		TaskQueue:           "payment_task_queue",
 		StartToCloseTimeout: time.Minute,
 	})
 
-	err := workflow.ExecuteActivity(ctxPayment, "WalletServiceActivities_ChargeWallet", params.UserID, params.TotalPrice).Get(ctx, nil)
+	// CALL BY EXPLICIT STRING NAME "ChargeWallet"
+	err := workflow.ExecuteActivity(ctxPayment, "ChargeWallet", params.UserID, params.TotalPrice).Get(ctx, nil)
 	if err != nil {
 		logger.Error("Failed to charge wallet", "Error", err)
 
+		// Compensation: Release Products
 		for _, item := range params.Items {
 			ctxProduct := workflow.WithActivityOptions(ctx, workflow.ActivityOptions{TaskQueue: "product-task-queue"})
-			_ = workflow.ExecuteActivity(ctxProduct, "ProductActivities_ReleaseProduct", item.ProductID, item.Quantity).Get(ctx, nil)
+			// CALL BY EXPLICIT STRING NAME "ReleaseProduct"
+			_ = workflow.ExecuteActivity(ctxProduct, "ReleaseProduct", item.ProductID, item.Quantity).Get(ctx, nil)
 		}
 
 		return setOrderStatus(ctx, params.OrderID, "Cancelled")
 	}
 
+	// 3. Success
 	return setOrderStatus(ctx, params.OrderID, "Paid")
 }
 
 func setOrderStatus(ctx workflow.Context, orderID, status string) error {
-	return workflow.ExecuteActivity(ctx, "OrderActivities_SetOrderStatusActivity", orderID, status).Get(ctx, nil)
+	// CALL BY EXPLICIT STRING NAME "SetOrderStatusActivity"
+	// Note: using context from start of workflow (Order Task Queue)
+	return workflow.ExecuteActivity(ctx, "SetOrderStatusActivity", orderID, status).Get(ctx, nil)
 }

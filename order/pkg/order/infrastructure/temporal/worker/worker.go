@@ -1,9 +1,11 @@
 package worker
 
 import (
-	"order/pkg/order/infrastructure/activity"
+	// Rename local package to avoid collision with sdk activity
+	appactivity "order/pkg/order/infrastructure/activity"
 	"order/pkg/order/infrastructure/temporal/workflows"
 
+	"go.temporal.io/sdk/activity"
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/worker"
 
@@ -21,7 +23,9 @@ func NewWorker(
 ) worker.Worker {
 	w := worker.New(temporalClient, temporal.TaskQueue, worker.Options{})
 
-	w.RegisterActivity(activity.NewOrderActivities(os))
+	acts := appactivity.NewOrderActivities(os)
+
+	w.RegisterActivityWithOptions(acts.SetOrderStatusActivity, activity.RegisterOptions{Name: "SetOrderStatusActivity"})
 
 	w.RegisterWorkflow(workflows.CreateOrderSaga)
 	return w

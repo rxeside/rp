@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/urfave/cli/v2"
+	"go.temporal.io/sdk/activity"
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/worker"
 
@@ -42,7 +43,10 @@ func runWorker(config *config) *cli.Command {
 			defer tClient.Close()
 
 			w := worker.New(tClient, "product-task-queue", worker.Options{})
-			w.RegisterActivity(activities)
+
+			// Explicitly register activities with string names used in Saga
+			w.RegisterActivityWithOptions(activities.ReserveProduct, activity.RegisterOptions{Name: "ReserveProduct"})
+			w.RegisterActivityWithOptions(activities.ReleaseProduct, activity.RegisterOptions{Name: "ReleaseProduct"})
 
 			log.Println("Starting Product Temporal Worker...")
 			return w.Run(worker.InterruptCh())
