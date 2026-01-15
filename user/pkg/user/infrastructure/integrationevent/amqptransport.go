@@ -9,6 +9,7 @@ import (
 	"gitea.xscloud.ru/xscloud/golib/pkg/application/logging"
 	"gitea.xscloud.ru/xscloud/golib/pkg/infrastructure/amqp"
 
+	"user/pkg/common/metrics"
 	"user/pkg/user/domain/model"
 	"user/pkg/user/infrastructure/temporal"
 )
@@ -50,7 +51,7 @@ func (t *amqpTransport) Handler() amqp.Handler {
 				return err
 			}
 			t.logger.Info("received user_updated event", "payload", e)
-			return nil // ← ТОЛЬКО ЛОГИРОВАНИЕ!
+			return nil
 
 		case model.UserDeleted{}.Type():
 			var e model.UserDeleted
@@ -83,7 +84,15 @@ func (t *amqpTransport) withLog(handler amqp.Handler) amqp.Handler {
 		start := time.Now()
 		err := handler(ctx, delivery)
 		l.WithField("duration", time.Since(start))
-
+		status := "success"
+		if err != nil {
+			if errors.Is(err, errUnhandledDelivery) {
+				status = "unhandled"
+			} else {
+				status = "error"
+			}
+		}
+		metrics.EventsProcessed.WithLabelValues(delivery.Type, status).Inc()
 		if err != nil {
 			if errors.Is(err, errUnhandledDelivery) {
 				l.Info("unhandled delivery, skipping")

@@ -97,3 +97,5 @@ spec:
           env:
             - name: TEMPORAL_ADDRESS
               value: temporal.infrastructure.svc.cluster.local:7233
+            - name: TEMPORAL_PORT
+              value: "8080"

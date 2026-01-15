@@ -6,3 +6,4 @@ resources:
   - mysql
   - rabbitmq
   - temporal
+  - monitoring

@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"errors"
+	"fmt"
 	"net"
 	"net/http"
 
@@ -11,6 +13,7 @@ import (
 	"gitea.xscloud.ru/xscloud/golib/pkg/infrastructure/mysql"
 	"gitea.xscloud.ru/xscloud/golib/pkg/infrastructure/outbox"
 	"github.com/gorilla/mux"
+	"github.com/jmoiron/sqlx"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
@@ -22,6 +25,9 @@ import (
 	"user/pkg/user/infrastructure/mysql/query"
 	"user/pkg/user/infrastructure/transport"
 	"user/pkg/user/infrastructure/transport/middlewares"
+
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/collectors"
 )
 
 type serviceConfig struct {
@@ -49,6 +55,21 @@ func service(logger logging.Logger) *cli.Command {
 				return err
 			}
 			closer.AddCloser(databaseConnector)
+			if dbVal := databaseConnector.TransactionalClient(); dbVal != nil {
+				logger.Info("DEBUG: Database client type is: %T", dbVal)
+
+				rawVal := interface{}(dbVal)
+
+				if sqlxDB, ok := rawVal.(*sqlx.DB); ok {
+					prometheus.MustRegister(collectors.NewDBStatsCollector(sqlxDB.DB, "user_db"))
+					logger.Info("DEBUG: Registered sqlx DB metrics")
+				} else if sqlDB, ok := rawVal.(*sql.DB); ok {
+					prometheus.MustRegister(collectors.NewDBStatsCollector(sqlDB, "user_db"))
+					logger.Info("DEBUG: Registered std sql DB metrics")
+				} else {
+					logger.Error(errors.New("cannot cast DB client"), "failed to register metrics", "type", fmt.Sprintf("%T", dbVal))
+				}
+			}
 			databaseConnectionPool := mysql.NewConnectionPool(databaseConnector.TransactionalClient())
 
 			libUoW := mysql.NewUnitOfWork(databaseConnectionPool, inframysql.NewRepositoryProvider)

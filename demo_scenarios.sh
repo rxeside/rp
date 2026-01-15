@@ -18,7 +18,29 @@ cd ..
 echo "1. Лог выше: 'User Created'"
 echo "2. Проверка БД Payment (кошелек создан):"
 kubectl exec -it -n infrastructure mysql-0 -- mysql -uroot -prootpass -e "SELECT * FROM payment_db.wallet ORDER BY created_at DESC LIMIT 1;" 2>/dev/null
-echo "3. Логи Notification Service (письмо отправлено):"
+
+echo "3. Проверка Метрик (Prometheus):"
+# Получаем имя пода user-handler
+HANDLER_POD=$(kubectl get pods -n application -l app=user-handler -o jsonpath="{.items[0].metadata.name}")
+echo "   Под (Handler): $HANDLER_POD"
+
+# Временно пробрасываем порт именно от этого пода в фон
+kubectl port-forward "$HANDLER_POD" -n application 9999:8082 > /dev/null 2>&1 &
+PF_PID=$!
+
+# Даем пару секунд на поднятие туннеля
+sleep 2
+
+if curl -s http://localhost:9999/metrics | grep -q "app_events_processed_total"; then
+    echo "   ✅ Метрика 'app_events_processed_total' найдена!"
+    curl -s http://localhost:9999/metrics | grep "app_events_processed_total"
+else
+    echo "   ⚠️ Метрика пока не найдена (возможно, Prometheus еще не успел собрать или событие в пути)"
+fi
+
+# Убиваем временный проброс порта
+kill $PF_PID 2>/dev/null
+echo "4. Логи Notification Service (письмо отправлено):"
 NOTIF_POD=$(kubectl get pods -n application -l app=notification-handler -o jsonpath="{.items[0].metadata.name}")
 kubectl logs "$NOTIF_POD" -n application --tail=2
 

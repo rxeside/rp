@@ -37,7 +37,7 @@ func CreateOrderSaga(ctx workflow.Context, params OrderSagaParams) error {
 			StartToCloseTimeout: time.Minute,
 		})
 
-		err := workflow.ExecuteActivity(ctxProduct, "ReserveProduct", item.ProductID, item.Quantity).Get(ctx, nil)
+		err := workflow.ExecuteActivity(ctxProduct, "ProductActivities_ReserveProduct", item.ProductID, item.Quantity).Get(ctx, nil)
 		if err != nil {
 			logger.Error("Failed to reserve product", "Error", err)
 			return setOrderStatus(ctx, params.OrderID, "Cancelled")
@@ -53,13 +53,13 @@ func CreateOrderSaga(ctx workflow.Context, params OrderSagaParams) error {
 		StartToCloseTimeout: time.Minute,
 	})
 
-	err := workflow.ExecuteActivity(ctxPayment, "ChargeWallet", params.UserID, params.TotalPrice).Get(ctx, nil)
+	err := workflow.ExecuteActivity(ctxPayment, "WalletServiceActivities_ChargeWallet", params.UserID, params.TotalPrice).Get(ctx, nil)
 	if err != nil {
 		logger.Error("Failed to charge wallet", "Error", err)
 
 		for _, item := range params.Items {
 			ctxProduct := workflow.WithActivityOptions(ctx, workflow.ActivityOptions{TaskQueue: "product-task-queue"})
-			_ = workflow.ExecuteActivity(ctxProduct, "ReleaseProduct", item.ProductID, item.Quantity).Get(ctx, nil)
+			_ = workflow.ExecuteActivity(ctxProduct, "ProductActivities_ReleaseProduct", item.ProductID, item.Quantity).Get(ctx, nil)
 		}
 
 		return setOrderStatus(ctx, params.OrderID, "Cancelled")
@@ -69,5 +69,5 @@ func CreateOrderSaga(ctx workflow.Context, params OrderSagaParams) error {
 }
 
 func setOrderStatus(ctx workflow.Context, orderID, status string) error {
-	return workflow.ExecuteActivity(ctx, "SetOrderStatusActivity", orderID, status).Get(ctx, nil)
+	return workflow.ExecuteActivity(ctx, "OrderActivities_SetOrderStatusActivity", orderID, status).Get(ctx, nil)
 }
