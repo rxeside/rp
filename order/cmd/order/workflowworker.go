@@ -64,7 +64,7 @@ func workflowWorker(logger logging.Logger) *cli.Command {
 
 			errGroup := errgroup.Group{}
 			errGroup.Go(func() error {
-				w := worker.NewWorker(temporalClient, appservice.NewOrderService(uow, luow, eventDispatcher))
+				w := worker.NewWorker(temporalClient, appservice.NewOrderService(uow, luow, eventDispatcher, temporalClient))
 				return w.Run(worker.InterruptChannel())
 			})
 

@@ -23,12 +23,12 @@ func (v version2) Version() int64 {
 }
 
 func (v version2) Description() string {
-	return "Create 'order_item' table"
+	return "Create 'order_items' table"
 }
 
 func (v version2) Up(ctx context.Context) error {
 	_, err := v.client.ExecContext(ctx, `
-		CREATE TABLE IF NOT EXISTS order_item
+		CREATE TABLE IF NOT EXISTS order_items
 		(
 		    order_id     VARCHAR(64)  NOT NULL,
 		    product_id   VARCHAR(64)  NOT NULL,

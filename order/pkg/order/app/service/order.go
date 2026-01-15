@@ -2,9 +2,11 @@ package service
 
 import (
 	"context"
+	"order/pkg/order/infrastructure/temporal/workflows"
 
 	"gitea.xscloud.ru/xscloud/golib/pkg/application/outbox"
 	"github.com/google/uuid"
+	"go.temporal.io/sdk/client" // Не забываем импорт
 
 	commonevent "order/pkg/common/event"
 	appdata "order/pkg/order/app/data"
@@ -22,11 +24,13 @@ func NewOrderService(
 	uow UnitOfWork,
 	luow LockableUnitOfWork,
 	eventDispatcher outbox.EventDispatcher[outbox.Event],
+	temporalClient client.Client, // Добавляем в параметры
 ) OrderService {
 	return &orderService{
 		uow:             uow,
 		luow:            luow,
 		eventDispatcher: eventDispatcher,
+		temporalClient:  temporalClient, // Сохраняем клиента
 	}
 }
 
@@ -34,6 +38,7 @@ type orderService struct {
 	uow             UnitOfWork
 	luow            LockableUnitOfWork
 	eventDispatcher outbox.EventDispatcher[outbox.Event]
+	temporalClient  client.Client // Добавляем поле в структуру
 }
 
 func (s *orderService) StoreOrder(ctx context.Context, order appdata.Order) (uuid.UUID, error) {
@@ -48,13 +53,11 @@ func (s *orderService) StoreOrder(ctx context.Context, order appdata.Order) (uui
 			orderID = oID
 		}
 
-		// Обновляем статус, если нужно
 		err := domainService.SetStatus(orderID, model.OrderStatus(order.Status))
 		if err != nil {
 			return err
 		}
 
-		// Обновляем Items, если нужно
 		for _, item := range order.Items {
 			err := domainService.AddItem(orderID, item.ProductID, item.TotalPrice)
 			if err != nil {
@@ -64,11 +67,30 @@ func (s *orderService) StoreOrder(ctx context.Context, order appdata.Order) (uui
 
 		return nil
 	})
-	if order.Status == appdata.Open {
-		go func() {
-			// s.temporalClient.ExecuteWorkflow(..., workflows.CreateOrderSaga, params)
-		}()
+
+	if err == nil && order.Status == appdata.Open {
+		items := make([]workflows.OrderItemParam, len(order.Items))
+		var total float64
+		for i, it := range order.Items {
+			items[i] = workflows.OrderItemParam{ProductID: it.ProductID.String(), Quantity: it.Count}
+			total += it.TotalPrice
+		}
+
+		_, sagaErr := s.temporalClient.ExecuteWorkflow(ctx, client.StartWorkflowOptions{
+			ID:        "order-saga-" + orderID.String(),
+			TaskQueue: "order_task_queue",
+		}, workflows.CreateOrderSaga, workflows.OrderSagaParams{
+			OrderID:    orderID.String(),
+			UserID:     order.CustomerID.String(),
+			Items:      items,
+			TotalPrice: total,
+		})
+
+		if sagaErr != nil {
+			return orderID, sagaErr
+		}
 	}
+
 	return orderID, err
 }
 

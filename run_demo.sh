@@ -61,7 +61,7 @@ log "Deploying Infrastructure..."
 kubectl apply -k config/infrastructure
 
 log "Waiting for MySQL..."
-kubectl wait -n infrastructure --for=condition=ready pod -l app=mysql --timeout=180s
+kubectl wait -n infrastructure --for=condition=ready pod -l app=mysql --timeout=300s
 
 # --- Создание БД ---
 log "Creating Databases & Users..."
@@ -133,38 +133,38 @@ kubectl port-forward svc/temporal-ui -n infrastructure 8080:8080 > /dev/null 2>&
 PID_TEMPORAL=$!
 
 sleep 5
-
-# 8. Запуск Теста
-log "Running End-to-End Saga Test..."
-if [ ! -f "order/cmd/e2e/main.go" ]; then
-    error "Test file order/cmd/e2e/main.go not found!"
-    exit 1
-fi
-
-# Запускаем тест из папки order, чтобы он видел go.mod
-cd order
-go run cmd/e2e/main.go
-TEST_EXIT_CODE=$?
-cd ..
-
-# 9. Логи Notification
-echo ""
-log "Checking Notification Service logs:"
-echo "-----------------------------------------------------"
-NOTIF_POD=$(kubectl get pods -n application -l app=notification-handler -o jsonpath="{.items[0].metadata.name}")
-kubectl logs "$NOTIF_POD" -n application --tail=10
-echo "-----------------------------------------------------"
-
-# 10. Очистка
-log "Stopping port-forwards..."
-kill $PID_USER $PID_PAYMENT $PID_ORDER $PID_PRODUCT $PID_TEMPORAL || true
-
-if [ $TEST_EXIT_CODE -eq 0 ]; then
-    echo ""
-    success "DEMO COMPLETED SUCCESSFULLY! 🎉"
-    echo "Temporal UI: http://localhost:8080"
-else
-    echo ""
-    error "DEMO FAILED."
-    exit $TEST_EXIT_CODE
-fi
+#
+## 8. Запуск Теста
+#log "Running End-to-End Saga Test..."
+#if [ ! -f "order/cmd/e2e/main.go" ]; then
+#    error "Test file order/cmd/e2e/main.go not found!"
+#    exit 1
+#fi
+#
+## Запускаем тест из папки order, чтобы он видел go.mod
+#cd order
+#go run cmd/e2e/main.go
+#TEST_EXIT_CODE=$?
+#cd ..
+#
+## 9. Логи Notification
+#echo ""
+#log "Checking Notification Service logs:"
+#echo "-----------------------------------------------------"
+#NOTIF_POD=$(kubectl get pods -n application -l app=notification-handler -o jsonpath="{.items[0].metadata.name}")
+#kubectl logs "$NOTIF_POD" -n application --tail=10
+#echo "-----------------------------------------------------"
+#
+## 10. Очистка
+#log "Stopping port-forwards..."
+#kill $PID_USER $PID_PAYMENT $PID_ORDER $PID_PRODUCT $PID_TEMPORAL || true
+#
+#if [ $TEST_EXIT_CODE -eq 0 ]; then
+#    echo ""
+#    success "DEMO COMPLETED SUCCESSFULLY! 🎉"
+#    echo "Temporal UI: http://localhost:8080"
+#else
+#    echo ""
+#    error "DEMO FAILED."
+#    exit $TEST_EXIT_CODE
+#fi

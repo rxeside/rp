@@ -60,6 +60,8 @@ spec:
               value: order
             - name: ORDER_DATABASE_PASSWORD
               value: 12345Q
+            - name: ORDER_TEMPORAL_HOST
+              value: temporal.infrastructure.svc.cluster.local:7233
 ---
 apiVersion: apps/v1
 kind: Deployment

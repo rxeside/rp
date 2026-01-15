@@ -49,7 +49,7 @@ func (t *amqpTransport) handle(ctx context.Context, delivery amqp.Delivery) erro
 		fmt.Println("event = ", e)
 		return t.workflowService.RunCreateUserWorkflow(ctx, delivery.CorrelationID, e)
 
-	case OrderStatusChangedType:
+	case OrderStatusChangedType: // TODO обновить го либу
 		var e model.OrderStatusChanged
 		err := json.Unmarshal(delivery.Body, &e)
 		if err != nil {

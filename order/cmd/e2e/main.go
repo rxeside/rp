@@ -6,6 +6,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/google/uuid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
@@ -13,7 +14,6 @@ import (
 )
 
 func main() {
-	// Подключаемся к Order Service (порт проброшен скриптом run_demo.sh)
 	conn, err := grpc.NewClient("localhost:8084", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatalf("Did not connect: %v", err)
@@ -21,7 +21,6 @@ func main() {
 	defer conn.Close()
 	client := pb.NewOrderInternalAPIClient(conn)
 
-	// Используем заранее подготовленные ID (которые мы вставим в БД через скрипт)
 	userID := "22222222-2222-2222-2222-222222222222"
 	productID := "11111111-1111-1111-1111-111111111111"
 
@@ -29,15 +28,18 @@ func main() {
 	defer cancel()
 
 	fmt.Println("--- Sending StoreOrder Request (Starting SAGA) ---")
-	// Создаем заказ
+
+	dummyID := uuid.New().String()
+
 	resp, err := client.StoreOrder(ctx, &pb.StoreOrderRequest{
 		CustomerID: userID,
 		Status:     pb.OrderStatus_Open,
 		Items: []*pb.OrderItem{
 			{
+				OrderID:    dummyID,
 				ProductID:  productID,
 				Count:      1,
-				TotalPrice: 100.0, // У нас на счету будет 1000, должно хватить
+				TotalPrice: 100.0,
 			},
 		},
 	})
@@ -49,7 +51,6 @@ func main() {
 	fmt.Printf("Order Created with ID: %s\n", orderID)
 
 	fmt.Println("--- Polling Order Status ---")
-	// Опрашиваем статус, пока он не станет Paid или Cancelled
 	for i := 0; i < 20; i++ {
 		r, err := client.FindOrder(ctx, &pb.FindOrderRequest{OrderID: orderID})
 		if err != nil {
@@ -62,7 +63,7 @@ func main() {
 				return
 			}
 			if r.Status == pb.OrderStatus_Cancelled {
-				log.Fatalf("❌ FAILURE: Order was CANCELLED. Saga compensation triggered (maybe insufficient funds/stock?).")
+				log.Fatalf("❌ FAILURE: Order was CANCELLED. Saga compensation triggered.")
 			}
 		}
 		time.Sleep(1 * time.Second)

@@ -1,6 +1,9 @@
 package worker
 
 import (
+	"order/pkg/order/infrastructure/activity"
+	"order/pkg/order/infrastructure/temporal/workflows"
+
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/worker"
 
@@ -14,8 +17,12 @@ func InterruptChannel() <-chan interface{} {
 
 func NewWorker(
 	temporalClient client.Client,
-	_ service.OrderService,
+	os service.OrderService,
 ) worker.Worker {
 	w := worker.New(temporalClient, temporal.TaskQueue, worker.Options{})
+
+	w.RegisterActivity(activity.NewOrderActivities(os))
+
+	w.RegisterWorkflow(workflows.CreateOrderSaga)
 	return w
 }

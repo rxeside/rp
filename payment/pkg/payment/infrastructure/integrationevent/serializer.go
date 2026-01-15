@@ -1,6 +1,9 @@
 package integrationevent
 
 import (
+	"encoding/json"
+	"payment/pkg/payment/domain/model"
+
 	"gitea.xscloud.ru/xscloud/golib/pkg/application/outbox"
 )
 
@@ -10,6 +13,10 @@ func NewEventSerializer() outbox.EventSerializer[outbox.Event] {
 
 type eventSerializer struct{}
 
-func (s eventSerializer) Serialize(_ outbox.Event) (string, error) {
+func (s eventSerializer) Serialize(event outbox.Event) (string, error) {
+	if e, ok := event.(*model.UserCreated); ok {
+		b, _ := json.Marshal(e)
+		return string(b), nil
+	}
 	return "", nil
 }

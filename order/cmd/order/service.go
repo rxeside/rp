@@ -15,6 +15,8 @@ import (
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 
+	"order/pkg/order/infrastructure/temporal"
+
 	internalapi "order/api/server/orderinternalapi"
 	appservice "order/pkg/order/app/service"
 	"order/pkg/order/infrastructure/integrationevent"
@@ -27,6 +29,7 @@ import (
 type serviceConfig struct {
 	Service  Service  `envconfig:"service"`
 	Database Database `envconfig:"database" required:"true"`
+	Temporal Temporal `envconfig:"temporal" required:"true"`
 }
 
 func service(logger logging.Logger) *cli.Command {
@@ -51,6 +54,15 @@ func service(logger logging.Logger) *cli.Command {
 			closer.AddCloser(databaseConnector)
 			databaseConnectionPool := mysql.NewConnectionPool(databaseConnector.TransactionalClient())
 
+			temporalClient, err := temporal.NewClient(logger, cnf.Temporal.Host)
+			if err != nil {
+				return err
+			}
+			closer.AddCloser(libio.CloserFunc(func() error {
+				temporalClient.Close()
+				return nil
+			}))
+
 			libUoW := mysql.NewUnitOfWork(databaseConnectionPool, inframysql.NewRepositoryProvider)
 			libLUow := mysql.NewLockableUnitOfWork(libUoW, mysql.NewLocker(databaseConnectionPool))
 			uow := inframysql.NewUnitOfWork(libUoW)
@@ -59,7 +71,7 @@ func service(logger logging.Logger) *cli.Command {
 
 			userPublicAPIServer := transport.NewOrderInternalAPI(
 				query.NewOrderQueryService(databaseConnector.TransactionalClient()),
-				appservice.NewOrderService(uow, luow, eventDispatcher),
+				appservice.NewOrderService(uow, luow, eventDispatcher, temporalClient),
 			)
 
 			errGroup := errgroup.Group{}
